@@ -1,0 +1,881 @@
+/* ==========================================================================
+   🌞 LOANVERSE LIGHT MODE — STRUCTURALLY IDENTICAL TO DARK MODE (BLISS MODE)
+   Only colors/backgrounds differ. All layout, sizing, spacing is mirrored.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    /* Base Colors - Light Mode Equivalents */
+    --bg-deep: #F1F5F9;
+    /* was #020617 */
+    --bg-surface: #FFFFFF;
+    --glass-surface: rgba(0, 0, 0, 0.03);
+    /* was rgba(255,255,255,0.03) */
+    --glass-border: rgba(148, 163, 184, 0.25);
+    /* was rgba(255,255,255,0.08) */
+
+    /* Accent Colors — same as dark mode for brand consistency */
+    --accent-teal: #14B8A6;
+    --accent-blue: #3B82F6;
+    --accent-purple: #8B5CF6;
+    --accent-amber: #F59E0B;
+
+    /* Text Colors — dark text on light background */
+    --text-primary: #0F172A;
+    /* was #F1F5F9 */
+    --text-secondary: #334155;
+    /* was #94A3B8 */
+    --text-muted: #475569;
+    /* was #64748B */
+
+    /* Semantic Colors */
+    --success: #10B981;
+    --warning: #F59E0B;
+    --error: #EF4444;
+    --info: #3B82F6;
+}
+
+/* === GLOBAL RESET & TYPOGRAPHY === */
+* {
+    font-family: 'Outfit', sans-serif !important;
+}
+
+/* Fix for Material Icons/Symbols — prevent Outfit from overriding them */
+.material-icons,
+.material-symbols-rounded,
+.material-symbols-outlined,
+[class*="material-symbols"],
+[class*="st-emotion-cache"] span {
+    font-family: inherit !important;
+}
+
+/* Re-apply Outfit to specific text elements to be safe */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div,
+button,
+input,
+textarea,
+label {
+    font-family: 'Outfit', sans-serif !important;
+}
+
+/* Exception for icon containers */
+button[kind="header"] span,
+button[data-testid="stSidebarCollapsedControl"] span,
+[data-testid="stSidebarCollapseButton"] span,
+[data-testid="stSidebarCollapsedControl"]>div,
+[data-testid="stSidebarCollapsedControl"]>span,
+.st-emotion-cache-1aplgmp span {
+    font-family: "Material Symbols Rounded", sans-serif !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    font-size: 24px !important;
+    line-height: 1 !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    display: inline-block !important;
+    white-space: nowrap !important;
+    word-wrap: normal !important;
+    direction: ltr !important;
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+}
+
+/* === MAIN APP BACKGROUND — mirrors dark mode exactly === */
+.stApp {
+    background-color: var(--bg-deep) !important;
+    background-image:
+        radial-gradient(circle at 10% 20%, rgba(20, 184, 166, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.06) 0%, transparent 40%) !important;
+    /* CRITICAL: same overflow and height as dark mode */
+    overflow: hidden !important;
+    height: 100vh !important;
+}
+
+/* === BLOCK CONTAINER — identical padding to dark mode === */
+.main .block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 0rem !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    max-width: 100vw !important;
+    overflow-y: auto !important;
+    height: 100vh !important;
+}
+
+/* === CUSTOM CHAT CONTAINER — identical to dark mode === */
+.chat-container-bliss {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 20px 10px;
+    margin-bottom: 80px;
+}
+
+/* === MESSAGE ROW — identical to dark mode === */
+.msg-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.msg-row.user {
+    flex-direction: row-reverse;
+}
+
+/* === 3D AVATAR CONTAINER — identical sizing, light-friendly colors === */
+.avatar-3d {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    border: 1px solid var(--glass-border) !important;
+    background: rgba(20, 184, 166, 0.08) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    /* Force visibility */
+    display: flex !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    overflow: visible !important;
+    z-index: 10 !important;
+}
+
+.avatar-3d svg {
+    width: 48px !important;
+    height: 48px !important;
+    display: block !important;
+}
+
+/* === MESSAGE BUBBLE — identical sizing/border-radius, light colors === */
+.msg-bubble {
+    max-width: 80%;
+    padding: 16px 20px;
+    border-radius: 20px;
+    position: relative;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07) !important;
+    transition: transform 0.2s ease;
+}
+
+.msg-bubble:hover {
+    transform: translateY(-2px);
+}
+
+/* Maya's Bubble (AI) — light equivalent of dark glass */
+.msg-row.assistant .msg-bubble {
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.06) 0%, rgba(255, 255, 255, 1) 100%) !important;
+    border: 1px solid rgba(20, 184, 166, 0.2) !important;
+    border-top-left-radius: 4px;
+}
+
+.msg-row.assistant .msg-bubble::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, var(--accent-teal), var(--accent-purple));
+    border-radius: 4px;
+    opacity: 0.8;
+}
+
+/* User's Bubble */
+.msg-row.user .msg-bubble {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(255, 255, 255, 1) 100%) !important;
+    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    border-top-right-radius: 4px;
+}
+
+/* === TEXT STYLING — dark text for light mode === */
+.msg-content {
+    color: var(--text-primary) !important;
+    font-size: 15px;
+    line-height: 1.6;
+    font-weight: 300;
+    letter-spacing: 0.3px;
+    text-shadow: none !important;
+    /* no dark-mode text shadow */
+}
+
+.msg-content strong {
+    font-weight: 600;
+    color: var(--accent-teal);
+}
+
+/* === E-KYC ALERT — same as dark, colors adapted === */
+.ekyc-alert {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid #F59E0B;
+    color: #92400E;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+}
+
+.msg-header {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.assistant .msg-header {
+    color: var(--accent-teal);
+}
+
+.user .msg-header {
+    color: var(--accent-blue);
+    justify-content: flex-end;
+}
+
+/* === INPUT FIELD — light mirror of dark === */
+/* Chat input styling is delegated entirely to Streamlit's native engine to prevent device-specific UI layout crashes and clipping. */
+
+/* === TEXT INPUT FIX === */
+div[data-testid="stTextInputRootElement"]>div {
+    background-color: #FFFFFF !important;
+    border: 1px solid var(--glass-border) !important;
+}
+
+div[data-testid="stTextInputRootElement"] input {
+    color: var(--text-primary) !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+    background-color: transparent !important;
+    caret-color: var(--accent-teal) !important;
+}
+
+div[data-testid="stTextInputRootElement"] input::placeholder {
+    color: var(--text-muted) !important;
+}
+
+/* === ANIMATIONS — identical to dark mode === */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.7;
+    }
+}
+
+/* === HIDE DEFAULT STREAMLIT ELEMENTS — same as dark === */
+.stChatMessage {
+    display: none !important;
+}
+
+iframe[title="streamlit_lottie.streamlit_lottie"] {
+    margin-bottom: -10px;
+}
+
+/* === ALERTS — light-adapted === */
+div[data-testid="stAlert"] {
+    position: fixed !important;
+    bottom: 24px !important;
+    right: 24px !important;
+    width: auto !important;
+    min-width: 350px !important;
+    max-width: 500px !important;
+    z-index: 9999 !important;
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid var(--accent-amber) !important;
+    color: var(--text-primary) !important;
+    border-radius: 12px !important;
+    backdrop-filter: blur(16px) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+    margin-bottom: 0 !important;
+}
+
+div[data-testid="stAlert"]>div {
+    color: var(--text-primary) !important;
+}
+
+/* === BUTTONS — identical to dark mode (teal brand color stays) === */
+.stButton>button[kind="primary"],
+.stButton>button[data-testid="baseButton-primary"] {
+    background: var(--accent-teal) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.stButton>button[kind="primary"]:hover,
+.stButton>button[data-testid="baseButton-primary"]:hover {
+    background: #0F9F8F !important;
+    box-shadow: 0 6px 16px rgba(20, 184, 166, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+.stButton>button {
+    background: var(--accent-teal) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(148, 163, 184, 0.2) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    font-weight: 500 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 2px 8px rgba(20, 184, 166, 0.25) !important;
+    transition: all 0.3s ease !important;
+    border-radius: 12px !important;
+}
+
+.stButton>button:hover {
+    background: #0F9F8F !important;
+    border-color: var(--accent-teal) !important;
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.35) !important;
+    transform: translateY(-1px) !important;
+}
+
+.stButton>button:active {
+    transform: translateY(0) !important;
+}
+
+/* === HIDE STREAMLIT DEFAULTS === */
+#MainMenu {
+    visibility: hidden;
+}
+
+footer {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* === HEADER / SIDEBAR TOGGLE === */
+header[data-testid="stHeader"] {
+    background: transparent !important;
+    z-index: 100000 !important;
+    visibility: visible !important;
+}
+
+header[data-testid="stHeader"] button[data-testid="stSidebarCollapsedControl"] {
+    color: var(--text-primary) !important;
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border-radius: 50% !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1px solid var(--glass-border) !important;
+    margin-top: 10px !important;
+    margin-left: 10px !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08) !important;
+}
+
+header[data-testid="stHeader"] button[data-testid="stSidebarCollapsedControl"]:hover {
+    background-color: var(--accent-teal) !important;
+    color: white !important;
+    transform: scale(1.1);
+}
+
+button[data-testid="stSidebarCollapsedControl"],
+[data-testid="stExpandSidebarButton"],
+[data-testid="stSidebarCollapseButton"] {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 50% !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.3s ease !important;
+    color: var(--text-primary) !important;
+    margin-right: 20px !important;
+    margin-top: 15px !important;
+}
+
+button[data-testid="stSidebarCollapsedControl"]:hover,
+[data-testid="stExpandSidebarButton"]:hover,
+[data-testid="stSidebarCollapseButton"]:hover {
+    background-color: var(--accent-teal) !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3) !important;
+    transform: scale(1.1);
+    border-color: var(--accent-teal) !important;
+}
+
+button[data-testid="stSidebarCollapsedControl"] span,
+[data-testid="stExpandSidebarButton"] span,
+[data-testid="stSidebarCollapseButton"] span {
+    color: var(--text-primary) !important;
+    fill: var(--text-primary) !important;
+    font-family: "Material Symbols Rounded", sans-serif !important;
+    opacity: 1 !important;
+    z-index: 100002 !important;
+}
+
+/* === SIDEBAR — light-adapted, same structure as dark === */
+[data-testid="stSidebar"] {
+    background-color: var(--bg-surface) !important;
+    border-right: 1px solid var(--glass-border) !important;
+}
+
+[data-testid="stSidebar"]>div:first-child {
+    background-color: transparent !important;
+}
+
+[data-testid="stSidebar"] hr {
+    border-color: var(--glass-border) !important;
+    margin: 1rem 0 !important;
+}
+
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
+    color: var(--text-primary) !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stSidebar"] * {
+    color: var(--text-primary) !important;
+}
+
+[data-testid="stSidebar"] .stSelectbox>div>div {
+    background-color: var(--glass-surface) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 12px !important;
+}
+
+[data-testid="stSidebar"] .stSelectbox>div>div:hover {
+    border-color: var(--accent-teal) !important;
+}
+
+[data-testid="stSidebar"] .stRadio>label {
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+}
+
+[data-testid="stSidebar"] button {
+    width: 100% !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+[data-testid="stSidebarNav"] {
+    display: none !important;
+}
+
+/* === SIDEBAR SECTION LABELS === */
+.sidebar-section-label {
+    color: var(--text-primary) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 8px !important;
+    margin-top: 16px !important;
+    text-transform: none !important;
+    opacity: 0.9 !important;
+}
+
+/* === RADIO BUTTONS IN SIDEBAR === */
+div[data-testid="stRadio"] label p {
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+}
+
+/* === SCROLLBAR — light-adapted === */
+::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}
+
+/* === NAVIGATION BAR — light-adapted === */
+.nav-container {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 99999;
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06) !important;
+    height: 70px;
+    display: flex;
+    align-items: center;
+}
+
+.nav-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding-left: 80px;
+    padding-right: 32px;
+}
+
+.nav-brand {
+    font-family: 'Outfit', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary) !important;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-icon-box {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--accent-teal), var(--accent-purple));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 10px rgba(20, 184, 166, 0.2);
+}
+
+.brand-text span {
+    color: var(--accent-teal);
+}
+
+.nav-links {
+    display: flex;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.03);
+    padding: 4px;
+    border-radius: 100px;
+    border: 1px solid var(--glass-border);
+}
+
+.nav-link {
+    padding: 8px 24px;
+    border-radius: 20px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-link:hover {
+    color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.nav-link.active {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-primary);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--glass-border);
+}
+
+/* === TYPING INDICATOR === */
+.typing-indicator {
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* === MAIN CONTAINER ADJUSTMENT FOR FIXED NAV === */
+.main .block-container {
+    padding-top: 90px !important;
+}
+
+/* === HERO SECTION — identical sizing to dark mode === */
+.hero-container {
+    padding: 60px 40px;
+    text-align: center;
+}
+
+.hero-greeting {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}
+
+.hero-title {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-primary) !important;
+}
+
+.hero-title-gradient {
+    background: linear-gradient(90deg, var(--accent-teal) 0%, #3B82F6 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+    font-size: 18px;
+    color: var(--text-secondary);
+    margin-bottom: 32px;
+}
+
+.quick-action-pill {
+    padding: 10px 20px;
+    border-radius: 24px;
+    border: 1px solid var(--glass-border);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.quick-action-pill:hover {
+    border-color: var(--accent-teal);
+    color: var(--accent-teal);
+    background: rgba(20, 184, 166, 0.06);
+    transform: translateY(-2px);
+}
+
+/* === CREDIT WIDGET — light-adapted === */
+.credit-widget {
+    background: var(--bg-surface) !important;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
+}
+
+.credit-score {
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--accent-amber) !important;
+}
+
+.credit-status {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.credit-trend {
+    color: var(--success);
+    font-size: 13px;
+}
+
+/* === STATS FOOTER — identical grid layout to dark mode === */
+.stats-footer {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 24px;
+    padding: 32px;
+    border-top: 1px solid var(--glass-border) !important;
+    background: var(--bg-surface) !important;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.stat-value.cyan {
+    color: var(--accent-teal) !important;
+}
+
+.stat-value.gold {
+    color: var(--accent-amber) !important;
+}
+
+.stat-value.green {
+    color: var(--success) !important;
+}
+
+.stat-value.purple {
+    color: var(--accent-purple) !important;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* === EMI CALCULATOR — identical structure to dark mode === */
+.emi-card {
+    background: var(--bg-surface) !important;
+    border-radius: 16px;
+    padding: 24px;
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
+}
+
+.emi-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.emi-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.emi-amount {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--accent-teal) !important;
+}
+
+.emi-chart-container {
+    margin: 24px 0;
+    text-align: center;
+}
+
+.emi-legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 16px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.legend-dot.principal {
+    background: var(--accent-teal);
+}
+
+.legend-dot.interest {
+    background: var(--accent-amber);
+}
+
+/* === INFO CARDS GRID — identical layout to dark mode === */
+.info-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.info-card {
+    background: rgba(20, 184, 166, 0.04) !important;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid rgba(20, 184, 166, 0.12) !important;
+}
+
+.info-card-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.info-card-value {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.info-card-value.cyan {
+    color: var(--accent-teal) !important;
+}
+
+.info-card-value.purple {
+    color: var(--accent-purple) !important;
+}
+
+.info-card-value.yellow {
+    color: var(--accent-amber) !important;
+}
+
+.info-card-value.red {
+    color: var(--error) !important;
+}
+
+/* === CHAT BUBBLE OVERRIDES (Streamlit native .stChatMessage) === */
+/* Override the dark-mode #FFFFFF text from style.css for light mode */
+.stChatMessage *,
+.stChatMessage p,
+.stChatMessage div,
+.stChatMessage span,
+[data-testid="stChatMessageContent"] *,
+[data-testid="stChatMessageContent"] p,
+[data-testid="stChatMessageContent"] div,
+[data-testid="stChatMessageContent"] span {
+    color: var(--text-primary) !important;
+}
+
+/* === CHAT CONTAINER BACKGROUND — light equivalent === */
+.stChatMessage {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border: 1px solid rgba(148, 163, 184, 0.2) !important;
+    border-radius: 16px !important;
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+}
+
+/* === GLOBAL FONT OVERRIDE EXCEPTION === */
+:not(.material-icons):not(.material-symbols-rounded):not([data-testid="stIconMaterial"]) {
+    font-family: 'Outfit', sans-serif !important;
+}

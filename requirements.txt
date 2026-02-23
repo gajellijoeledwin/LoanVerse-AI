@@ -1,0 +1,20 @@
+# LoanVerse AI - Python Dependencies
+# ===================================
+# Install with: pip install -r requirements.txt
+
+# Core Framework
+streamlit>=1.31.0
+
+# Google Gemini AI
+google-generativeai>=0.3.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# PDF Generation & QR Code
+reportlab>=4.0.0
+qrcode>=7.4.2
+pillow>=10.0.0
+
+# Charts
+plotly>=5.18.0

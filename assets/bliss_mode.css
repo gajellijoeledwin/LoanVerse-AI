@@ -1,0 +1,763 @@
+/* ==========================================================================
+   🚀 LOANVERSE BLISS MODE - UI/UX OVERHAUL (2025 EDITION)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    /* Base Colors */
+    --bg-deep: #020617;
+    --glass-surface: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+
+    /* Refined Accent Colors - Softer, More Professional */
+    --accent-teal: #14B8A6;
+    /* Muted teal - primary CTA */
+    --accent-blue: #3B82F6;
+    /* Professional blue - secondary */
+    --accent-purple: #8B5CF6;
+    /* Softer purple - tertiary */
+    --accent-amber: #F59E0B;
+    /* Warm amber - success/highlight */
+
+    /* Text Colors - Improved Readability */
+    --text-primary: #F1F5F9;
+    /* Off-white for better readability */
+    --text-secondary: #94A3B8;
+    /* Slate gray */
+    --text-muted: #64748B;
+    /* Muted slate */
+
+    /* Semantic Colors */
+    --success: #10B981;
+    /* Green for positive */
+    --warning: #F59E0B;
+    /* Amber for caution */
+    --error: #EF4444;
+    /* Red for errors */
+    --info: #3B82F6;
+    /* Blue for info */
+}
+
+/* === GLOBAL RESET & TYPOGRAPHY === */
+* {
+    font-family: 'Outfit', sans-serif !important;
+}
+
+/* Fix for Material Icons/Symbols - prevent Outfit from overriding them */
+.material-icons,
+.material-symbols-rounded,
+.material-symbols-outlined,
+[class*="material-symbols"],
+[class*="st-emotion-cache"] span {
+    font-family: inherit !important;
+}
+
+/* Re-apply Outfit to specific text elements to be safe */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div,
+button,
+input,
+textarea,
+label {
+    font-family: 'Outfit', sans-serif !important;
+}
+
+/* Exception for icon containers */
+button[kind="header"] span,
+button[data-testid="stSidebarCollapsedControl"] span,
+[data-testid="stSidebarCollapseButton"] span,
+[data-testid="stSidebarCollapsedControl"]>div,
+[data-testid="stSidebarCollapsedControl"]>span,
+.st-emotion-cache-1aplgmp span {
+    font-family: "Material Symbols Rounded", sans-serif !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    font-size: 24px !important;
+    line-height: 1 !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    display: inline-block !important;
+    white-space: nowrap !important;
+    word-wrap: normal !important;
+    direction: ltr !important;
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+}
+
+.stApp {
+    background-color: var(--bg-deep) !important;
+    background-image:
+        radial-gradient(circle at 10% 20%, rgba(20, 184, 166, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 40%) !important;
+}
+
+/* === CUSTOM CHAT CONTAINER === */
+.chat-container-bliss {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 20px 10px;
+    margin-bottom: 80px;
+    /* Space for input */
+}
+
+/* === MESSAGE ROW === */
+.msg-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.msg-row.user {
+    flex-direction: row-reverse;
+}
+
+/* === 3D AVATAR CONTAINER === */
+.avatar-3d {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.avatar-3d svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* === MESSAGE BUBBLE - GLASSMORPHISM === */
+.msg-bubble {
+    max-width: 80%;
+    padding: 16px 20px;
+    border-radius: 20px;
+    position: relative;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.msg-bubble:hover {
+    transform: translateY(-2px);
+}
+
+/* Maya's Bubble (AI) */
+.msg-row.assistant .msg-bubble {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top-left-radius: 4px;
+}
+
+.msg-row.assistant .msg-bubble::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, var(--accent-teal), var(--accent-purple));
+    border-radius: 4px;
+    opacity: 0.8;
+}
+
+/* User's Bubble */
+.msg-row.user .msg-bubble {
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+    border: 1px solid rgba(20, 184, 166, 0.2);
+    border-top-right-radius: 4px;
+}
+
+/* === TEXT STYLING === */
+.msg-content {
+    color: var(--text-primary) !important;
+    font-size: 15px;
+    line-height: 1.6;
+    font-weight: 300;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.msg-content strong {
+    font-weight: 600;
+    color: var(--accent-teal);
+}
+
+/* === E-KYC ALERT === */
+.ekyc-alert {
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid #FFD700;
+    color: #FFD700;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+}
+
+.msg-header {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.assistant .msg-header {
+    color: var(--accent-teal);
+}
+
+.user .msg-header {
+    color: #E2E8F0;
+    justify-content: flex-end;
+}
+
+/* === INPUT FIELD OVERHAUL === */
+
+/* === TEXT INPUT FIX (st.text_input) - MAXIMUM SPECIFICITY FOR DARK MODE === */
+/* Forces dark background to ensure white text is visible */
+
+/* Target the input wrapper with maximum specificity */
+body section.stMain div[data-testid="stTextInputRootElement"],
+body div.stApp div[data-testid="stTextInputRootElement"] {
+    background-color: rgba(15, 23, 42, 0.8) !important;
+    /* Dark slate background */
+}
+
+body section.stMain div[data-testid="stTextInputRootElement"]>div,
+body div.stApp div[data-testid="stTextInputRootElement"]>div {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+body section.stMain div[data-testid="stTextInputRootElement"] input,
+body div.stApp div[data-testid="stTextInputRootElement"] input {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    background-color: transparent !important;
+    caret-color: var(--accent-teal) !important;
+}
+
+body section.stMain div[data-testid="stTextInputRootElement"] input::placeholder,
+body div.stApp div[data-testid="stTextInputRootElement"] input::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.7;
+    }
+}
+
+html,
+body,
+[class*="st-"] {
+    font-family: 'Outfit', sans-serif;
+}
+
+/* === HIDE DEFAULT ELEMENTS === */
+.stChatMessage {
+    display: none !important;
+}
+
+iframe[title="streamlit_lottie.streamlit_lottie"] {
+    margin-bottom: -10px;
+}
+
+/* === ROBUST ALERT OVERRIDES === */
+div[data-testid="stAlert"] {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--accent-amber) !important;
+    color: var(--text-primary) !important;
+    border-radius: 12px !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+div[data-testid="stAlert"]>div {
+    color: var(--text-primary) !important;
+}
+
+/* Error/Success specific overrides */
+div[data-testid="stAlert"][data-test-style="error"] {
+    border-color: #EF4444 !important;
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.1), transparent) !important;
+}
+
+div[data-testid="stAlert"][data-test-style="success"] {
+    border-color: #10B981 !important;
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), transparent) !important;
+}
+
+/* === STREAMLIT BUTTON OVERRIDES === */
+/* Primary Buttons - Muted Teal with Improved Readability */
+.stButton>button[kind="primary"],
+.stButton>button[data-testid="baseButton-primary"] {
+    background: var(--accent-teal) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.stButton>button[kind="primary"]:hover,
+.stButton>button[data-testid="baseButton-primary"]:hover {
+    background: #0F9F8F !important;
+    box-shadow: 0 6px 16px rgba(20, 184, 166, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Default Buttons - Glassmorphic Style */
+.stButton>button {
+    background: var(--accent-teal) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    font-weight: 500 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s ease !important;
+    border-radius: 12px !important;
+}
+
+.stButton>button:hover {
+    background: #0F9F8F !important;
+    border-color: var(--accent-teal) !important;
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+.stButton>button:active {
+    transform: translateY(0) !important;
+}
+
+
+/* === FORCE AVATAR VISIBILITY === */
+.avatar-3d {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    overflow: visible !important;
+    z-index: 10 !important;
+}
+
+.avatar-3d svg {
+    width: 48px !important;
+    height: 48px !important;
+    display: block !important;
+}
+
+.typing-indicator {
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* ==========================================================================
+   🚀 SINGLE SCREEN OPTIMIZATIONS (USER REQUEST)
+   ========================================================================== */
+
+/* 1. Remove Page Scrolling */
+::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}
+
+.stApp {
+    overflow: hidden !important;
+    height: 100vh !important;
+}
+
+/* 2. Maximize Vertical Space */
+.main .block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 0rem !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    max-width: 100vw !important;
+    overflow-y: auto !important;
+    height: 100vh !important;
+}
+
+/* 3. Floating Toast Alert (User Feedback) */
+div[data-testid="stAlert"] {
+    position: fixed !important;
+    bottom: 24px !important;
+    right: 24px !important;
+    width: auto !important;
+    min-width: 350px !important;
+    max-width: 500px !important;
+    z-index: 9999 !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+    margin-bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    border: 1px solid var(--accent-amber) !important;
+    backdrop-filter: blur(16px) !important;
+}
+
+/* Improve header visibility for Sidebar Toggle */
+header[data-testid="stHeader"] {
+    background: transparent !important;
+    z-index: 100000 !important;
+    visibility: visible !important;
+}
+
+/* Ensure sidebar toggle button is visible and high contrast */
+header[data-testid="stHeader"] button[data-testid="stSidebarCollapsedControl"] {
+    color: var(--text-primary) !important;
+    background-color: rgba(2, 6, 23, 0.5) !important;
+    border-radius: 50% !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1px solid var(--glass-border) !important;
+    margin-top: 10px !important;
+    margin-left: 10px !important;
+    transition: all 0.3s ease !important;
+}
+
+header[data-testid="stHeader"] button[data-testid="stSidebarCollapsedControl"]:hover {
+    background-color: var(--accent-teal) !important;
+    color: white !important;
+    transform: scale(1.1);
+}
+
+/* === SIDEBAR VISIBILITY FIXES === */
+/* Fix visibility of Radio Buttons in Sidebar (Theme Toggle) */
+div[data-testid="stRadio"] label p {
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+}
+
+/* Ensure Toggle Button (Chevron) is high contrast */
+button[data-testid="stSidebarCollapsedControl"],
+button[data-testid="stSidebarCollapsedControl"] span {
+    color: var(--text-primary) !important;
+    /* Force white text/icon */
+    fill: var(--text-primary) !important;
+}
+
+/* Hide Footer */
+footer {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Main Container Adjustment for Fixed Nav */
+.main .block-container {
+    padding-top: 90px !important;
+}
+
+/* === PREMIUM NAVIGATION (BLISS MODE) === */
+.nav-container {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 99999;
+    background: rgba(2, 6, 23, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    height: 70px;
+    display: flex;
+    align-items: center;
+}
+
+.nav-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding-left: 80px;
+    /* Increased to clear Sidebar Toggle */
+    padding-right: 32px;
+}
+
+.nav-brand {
+    font-family: 'Outfit', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-icon-box {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--accent-teal), var(--accent-purple));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 15px rgba(20, 184, 166, 0.3);
+}
+
+.brand-text span {
+    color: var(--accent-teal);
+}
+
+.nav-links {
+    display: flex;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 4px;
+    border-radius: 100px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.nav-link {
+    padding: 8px 24px;
+    border-radius: 20px;
+    color: #94A3B8;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-link:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-link.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.nav-tools {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.nav-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #94A3B8;
+}
+
+.nav-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transform: translateY(-1px);
+    border-color: var(--accent-teal);
+    color: var(--accent-teal);
+}
+
+.user-badge {
+    position: relative;
+}
+
+.status-dot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    background: #10B981;
+    border-radius: 50%;
+    border: 1px solid #020617;
+}
+
+/* === SIDEBAR PREMIUN STYLING === */
+[data-testid="stSidebar"] {
+    background-color: var(--bg-deep) !important;
+    border-right: 1px solid var(--glass-border) !important;
+}
+
+[data-testid="stSidebar"]>div:first-child {
+    background-color: transparent !important;
+}
+
+[data-testid="stSidebar"] hr {
+    border-color: var(--glass-border) !important;
+    margin: 1rem 0 !important;
+}
+
+/* Sidebar Headers */
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
+    color: var(--text-primary) !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600 !important;
+}
+
+/* Sidebar Inputs (Selectbox, Radio) */
+[data-testid="stSidebar"] .stSelectbox>div>div {
+    background-color: var(--glass-surface) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 12px !important;
+}
+
+[data-testid="stSidebar"] .stSelectbox>div>div:hover {
+    border-color: var(--accent-teal) !important;
+}
+
+/* Theme Toggle Radio */
+[data-testid="stSidebar"] .stRadio>label {
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+}
+
+/* Sidebar Buttons */
+[data-testid="stSidebar"] button {
+    width: 100% !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Hide default streamlit branding if present */
+[data-testid="stSidebarNav"] {
+    display: none !important;
+}
+
+/* === SIDEBAR SECTION LABELS - HIGH VISIBILITY === */
+.sidebar-section-label {
+    color: var(--text-primary) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 8px !important;
+    margin-top: 16px !important;
+    text-transform: none !important;
+    opacity: 0.9 !important;
+}
+
+/* === SIDEBAR VISIBILITY FIXES === */
+/* Fix visibility of Radio Buttons in Sidebar (Theme Toggle) */
+div[data-testid="stRadio"] label p {
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+}
+
+/* Ensure Toggle Button (Chevron) is high contrast and uses correct font */
+/* Targets both the expand button (when closed) and collapse button (when open) */
+button[data-testid="stSidebarCollapsedControl"],
+button[data-testid="stSidebarCollapsedControl"] span,
+button[data-testid="stSidebarCollapsedControl"] svg,
+button[kind="header"] span,
+[data-testid="stExpandSidebarButton"],
+[data-testid="stExpandSidebarButton"] span,
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarCollapseButton"] span,
+[data-testid="stSidebarCollapseButton"] svg {
+    color: #F1F5F9 !important;
+    /* Force bright white */
+    fill: #F1F5F9 !important;
+    font-family: "Material Symbols Rounded", sans-serif !important;
+    /* Ensure icon font */
+    opacity: 1 !important;
+    z-index: 100002 !important;
+}
+
+/* Global Font Override Exception - Consolidated */
+:not(.material-icons):not(.material-symbols-rounded):not([data-testid="stIconMaterial"]) {
+    font-family: 'Outfit', sans-serif !important;
+}
+
+/* Distinct Button Styling for Expanded/Collapsed Control Container */
+button[data-testid="stSidebarCollapsedControl"],
+[data-testid="stExpandSidebarButton"],
+[data-testid="stSidebarCollapseButton"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 50% !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 0 10px rgba(20, 184, 166, 0.3) !important;
+    /* Subtle teal glow */
+    transition: all 0.3s ease !important;
+    margin-right: 20px !important;
+    /* Add breathing room from logo */
+    margin-top: 15px !important;
+    /* Center vertically better */
+}
+
+button[data-testid="stSidebarCollapsedControl"]:hover,
+[data-testid="stExpandSidebarButton"]:hover,
+[data-testid="stSidebarCollapseButton"]:hover {
+    background-color: var(--accent-teal) !important;
+    box-shadow: 0 0 15px var(--accent-teal) !important;
+    transform: scale(1.1);
+    border-color: var(--accent-teal) !important;
+}
+
+/* =========================================================
+   CHAT INPUT
+   ========================================================= */
+/* Chat input styling is delegated entirely to Streamlit's native engine to prevent device-specific UI layout crashes and clipping. */
