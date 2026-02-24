@@ -130,4 +130,4 @@ LoanVerse AI is designed to mirror real NBFC standards:
 
 ## 👥 Team
 
-Built with ❤️ for the **Tata Capital Techathon 2026**.
+Built with ❤️ for the **EY Techathon 2026**.
