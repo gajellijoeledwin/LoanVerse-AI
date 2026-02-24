@@ -21,11 +21,11 @@
         "address": "45 Andheri West, Mumbai, Maharashtra 400058",
         "pan": "FGHIJ5678K",
         "score": 742,
-        "limit": 600000,
+        "limit": 350000,
         "salary": 45000,
         "current_emis": 8000,
-        "employment": "Chartered Accountant, 2 years",
-        "current_loan_details": "Education loan ₹2L (₹8000/month EMI)"
+        "employment": "Chartered Accountant, 3 years at Deloitte",
+        "current_loan_details": "Education loan ₹2L (₹8,000/month EMI)"
     },
     {
         "phone": "7654321098",

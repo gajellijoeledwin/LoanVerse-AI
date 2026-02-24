@@ -761,3 +761,55 @@ button[data-testid="stSidebarCollapsedControl"]:hover,
    CHAT INPUT
    ========================================================= */
 /* Chat input styling is delegated entirely to Streamlit's native engine to prevent device-specific UI layout crashes and clipping. */
+
+/* =========================================================
+   FILE UPLOADER — Salary Slip Widget (dark mode)
+   ========================================================= */
+
+/* Drop-zone container */
+[data-testid="stFileUploader"] section {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1.5px dashed rgba(20, 184, 166, 0.55) !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+}
+
+[data-testid="stFileUploader"] section:hover {
+    border-color: var(--accent-teal) !important;
+    background: rgba(20, 184, 166, 0.06) !important;
+}
+
+/* Label / drag text */
+[data-testid="stFileUploader"] span,
+[data-testid="stFileUploader"] small,
+[data-testid="stFileUploader"] p {
+    color: var(--text-secondary) !important;
+}
+
+/* "Browse files" button — must be visible on dark background */
+[data-testid="stFileUploader"] section button,
+[data-testid="stFileUploaderDropzoneInput"]+button,
+[data-testid="stFileUploader"] button {
+    background: var(--accent-teal) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 6px 16px !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    cursor: pointer !important;
+}
+
+[data-testid="stFileUploader"] section button:hover,
+[data-testid="stFileUploader"] button:hover {
+    background: #0F9F8F !important;
+    box-shadow: 0 2px 8px rgba(20, 184, 166, 0.4) !important;
+}
+
+/* File name chip after upload */
+[data-testid="stFileUploader"] [data-testid="stUploadedFile"] {
+    background: rgba(20, 184, 166, 0.1) !important;
+    border: 1px solid rgba(20, 184, 166, 0.3) !important;
+    border-radius: 8px !important;
+    color: var(--text-primary) !important;
+}

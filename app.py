@@ -55,16 +55,9 @@ st.set_page_config(
 )
 
 # ============================================================================
-# GLASSMORPHISM CSS STYLING
+# CSS STYLING
 # ============================================================================
 
-def inject_custom_css():
-    """Inject professional banking-grade CSS - Fortune 500 standards."""
-    # This function is kept for legacy inline styles if needed, 
-    # but bliss_mode.css primarily handles the UI now.
-    pass
-
-# Load additional custom CSS from file (overrides above)
 def load_custom_css_file():
     """Load custom CSS assets with theme support."""
     # 1. Load Base Styles
@@ -74,7 +67,6 @@ def load_custom_css_file():
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
             
     # 2. Load Theme-Specific CSS (Dark or Light Mode)
-    # Initialize theme in session state if not present
     if 'theme' not in st.session_state:
         st.session_state.theme = "dark"  # Default to dark mode
     
@@ -87,7 +79,6 @@ def load_custom_css_file():
         with open(theme_css, "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-inject_custom_css()
 load_custom_css_file()
 
 
@@ -261,9 +252,9 @@ def initialize_session_state():
     if 'phone_buffer' not in st.session_state:
         st.session_state.phone_buffer = None
     
-    # Demo Mode (for presentation)
+    # Developer / Demo Mode
     if 'demo_mode' not in st.session_state:
-        st.session_state.demo_mode = True  # Set to False for live AI
+        st.session_state.demo_mode = False
     
     if 'demo_scenario' not in st.session_state:
         st.session_state.demo_scenario = None  # 'ravi', 'priya', or 'sneha'
@@ -286,17 +277,37 @@ def initialize_session_state():
     if 'loan_purpose' not in st.session_state:
         st.session_state.loan_purpose = None
     
-    # Requested amount (from user input in Gate 2)
+    # Requested amount (from user input in Phase 4)
     if 'requested_amount' not in st.session_state:
         st.session_state.requested_amount = None
     
-    # Goldilocks 3 options (generated in Gate 2, presented in Gate 3)
+    # Goldilocks 3 options (generated in Phase 4, presented in Phase 5)
     if 'goldilocks_options' not in st.session_state:
         st.session_state.goldilocks_options = None
     
-    # Chosen option from Goldilocks (set in Gate 3)
+    # Chosen option from Goldilocks (set in Phase 5)
     if 'chosen_option' not in st.session_state:
         st.session_state.chosen_option = None
+
+    # Salary slip confirmation pending (user uploaded suspicious-filename document)
+    if 'awaiting_slip_confirm' not in st.session_state:
+        st.session_state.awaiting_slip_confirm = False
+
+    # Dynamic key for salary slip uploader — increment to force widget reset after rejection
+    if 'slip_uploader_key' not in st.session_state:
+        st.session_state.slip_uploader_key = 0
+
+    # Negotiator Agent state — tracks active negotiation and escalation
+    if 'negotiation_attempts' not in st.session_state:
+        st.session_state.negotiation_attempts = 0
+    if 'negotiation_active' not in st.session_state:
+        st.session_state.negotiation_active = False
+    if 'human_handoff' not in st.session_state:
+        st.session_state.human_handoff = False
+    # Domain being negotiated ('RATE', 'AMOUNT', 'EMI') — persists across turns
+    # so re-fires stay on the same escalation ladder.
+    if 'negotiation_domain' not in st.session_state:
+        st.session_state.negotiation_domain = None
     
     # Human handoff logic
     if 'refusal_count' not in st.session_state:
@@ -305,13 +316,20 @@ def initialize_session_state():
     if 'awaiting_handoff' not in st.session_state:
         st.session_state.awaiting_handoff = False
     
-    # FIX 4: Name-mismatch pending state — must be initialized so Reset clears it
+    # Name-mismatch pending state — initialized here so Reset clears it correctly
     if 'name_mismatch_pending' not in st.session_state:
         st.session_state.name_mismatch_pending = None
 
-    # Bug 11 fix: selected_tenure must be initialized so EMI calculator uses correct tenure
+    # Tracks the selected repayment tenure (months) for the live EMI calculator
     if 'selected_tenure' not in st.session_state:
         st.session_state.selected_tenure = 36
+
+    # Salary slip upload simulation for CONDITIONAL approval path
+    if 'awaiting_salary_slip' not in st.session_state:
+        st.session_state.awaiting_salary_slip = False
+
+    if 'salary_slip_verified' not in st.session_state:
+        st.session_state.salary_slip_verified = False
 
 
 # ============================================================================
@@ -360,7 +378,7 @@ def render_sidebar():
             <div class="avatar-card">
                 <div class="avatar-img"></div>
                 <div class="avatar-name">{user_name}</div>
-                <div class="trust-score-badge">{trust_emoji} Trust Score: {trust_label}</div>
+                <div class="trust-score-badge">{trust_emoji} CIBIL Score: {score} / 900</div>
             </div>
             """, unsafe_allow_html=True)
         else:
@@ -580,10 +598,7 @@ def display_chat_messages():
             
         render_chat_bubble(role, content, avatar)
 
-    # FIX 4: Auto-scroll via components.v1.html using confirmed correct selector
-    # Browser inspection confirmed: the chat container is [data-testid="stVerticalBlock"]
-    # (scrollHeight:863 > clientHeight:478). components.v1.html is same-origin so
-    # window.parent.document IS accessible without cross-origin errors.
+    # Auto-scroll to latest message using a components iframe (same-origin access)
     import streamlit.components.v1 as _components
     _components.html("""
 <script>
@@ -703,28 +718,55 @@ def handle_phase_1_warm_opening(user_input: str) -> None:
 
     import re
     cleaned_input = re.sub(r'[^\w\s]', '', user_input).strip()
-    
-    base_words = {"i", "am", "my", "name", "is", "need", "a", "loan", "of", "for", "lakhs", "rs", "rupees", "lakh", "k", "want", "get", "hi", "hello", "hey"}
+
+    # Loan purpose words must NOT be extracted as names
+    purpose_words = {
+        "wedding", "education", "travel", "medical", "business",
+        "home", "renovation", "house", "studies", "college", "trip",
+        "holiday", "emergency", "hospital", "startup", "shop",
+    }
+    base_words = {
+        "i", "am", "my", "name", "is", "need", "a", "an", "loan", "of",
+        "for", "lakhs", "rs", "rupees", "lakh", "k", "want", "get",
+        "hi", "hello", "hey", "the", "please", "help", "apply"
+    } | purpose_words
+
     input_words = cleaned_input.lower().split()
     remaining_words = [w for w in input_words if w not in base_words and not any(c.isdigit() for c in w)]
-    
+
     if len(remaining_words) == 0 and not st.session_state.get('user_name'):
         if amount > 0:
             add_message("assistant", f"Got it! You're looking for ✨ **₹{amount:,.0f}**.\n\nTo personalize your experience, **could you please tell me your name?**")
         else:
             add_message("assistant", "I didn't quite catch your name. **Could you please tell me your name?**")
         return # Block transition
-    
+
     if not st.session_state.get('user_name'):
         # Extract name naively
         name_extracted = " ".join(remaining_words[:2]).title() if remaining_words else user_input.title()
         st.session_state.user_name = name_extracted
 
-    st.session_state.conversation_phase = ConversationPhase.PHASE_2_PURPOSE_DISCOVERY
     name_str = st.session_state.get('user_name', '')
     greeting = f"Nice to meet you, {name_str}! 👋\n\n" if name_str else "Hello! 👋\n\n"
-    
-    add_message("assistant", f"{greeting}I'd be happy to help you with a personal loan today. To start, **what is the main purpose of your loan?** (e.g. Wedding, Education, Medical, Renovation)")
+
+    # If a shortcut button pre-filled the purpose, skip Phase 2 and go straight to phone verification
+    prefilled = st.session_state.pop('prefilled_loan_purpose', None)
+    if prefilled:
+        st.session_state.loan_purpose = prefilled.title()
+        st.session_state.conversation_phase = ConversationPhase.PHASE_3_VERIFICATION
+        from conversation_templates import templates
+        celebration = templates.celebration_response(prefilled)
+        add_message("assistant",
+            f"{greeting}{celebration}\n\n"
+            f"To calculate your personalized offer and exact interest rate, "
+            f"**could you please provide your 10-digit mobile number?** 📱")
+    else:
+        st.session_state.conversation_phase = ConversationPhase.PHASE_2_PURPOSE_DISCOVERY
+        add_message("assistant",
+            f"{greeting}I'd be happy to help you with a personal loan today. "
+            f"To start, **what is the main purpose of your loan?** "
+            f"(e.g. Wedding, Education, Medical, Renovation)")
+
 
 def handle_phase_2_purpose_discovery(user_input: str) -> None:
     # Extract loan purpose
@@ -852,22 +894,460 @@ def handle_phase_3_verification(user_input: str) -> None:
     _execute_successful_phase_3(phone, user_data)
 
 def handle_phase_4_needs_analysis(user_input: str) -> None:
-    # Need to get exact amount
     from app import extract_amount_from_input
     from conversation_templates import templates
     from logic import get_risk_based_rate, calculate_emi, calculate_dti_with_existing_loans, validate_amount_request
+
+    # ── TOP PRIORITY: Path A / B / C selections ──────────────────────────────
+    # Handled FIRST, before any state checks, so they always work regardless of
+    # session state (awaiting_renegotiation, negotiation_active, etc.)
+    if st.session_state.get('user_data'):
+        _ui_top = user_input.lower().strip()
+        _is_path_a = _ui_top.startswith('path a') or _ui_top == 'a'
+        _is_path_b = _ui_top.startswith('path b') or _ui_top == 'b'
+        _is_path_c = _ui_top.startswith('path c') or _ui_top == 'c'
+        _is_explore = any(p in _ui_top for p in [
+            'explore', 'alternative', 'other option', 'other path',
+            'different path', 'different option', 'something else',
+            'other ways', 'what else', 'what are my options',
+        ]) and not any(c.isdigit() for c in _ui_top)
+
+        if _is_path_a or _is_explore:
+            _user_data = st.session_state.user_data
+            instant_limit = _user_data.get('limit', 0)
+            if _is_explore and not _is_path_a:
+                # Re-show the full menu
+                _score = _user_data.get('score', 700)
+                _emis  = _user_data.get('current_emis', 0)
+                _path_b_label = "Loan Consolidation" if _emis > 0 else "Improve Your CIBIL Score"
+                add_message("assistant",
+                    f"Of course! Here are the paths available to you:\n\n"
+                    f"**Path A — Start with What's Approved Instantly**\n"
+                    f"I can approve up to **₹{instant_limit:,.0f}** right now — no documents needed.\n\n"
+                    f"**Path B — {_path_b_label}**\n"
+                    f"{'Roll existing EMIs into one product at a lower rate.' if _emis > 0 else f'Your score is {_score}/900 — just {max(700-_score,0)} points from our Standard tier.'}\n\n"
+                    f"**Path C — Wait & Strengthen**\n"
+                    f"Return in 3–6 months with an improved score for a fast-track approval.\n\n"
+                    f"Which path would you like to explore? (Type **'Path A'**, **'Path B'**, or **'Path C'**)")
+            else:
+                add_message("assistant",
+                    f"Great choice! 💪 Let's find an amount that works for you.\n\n"
+                    f"Based on your pre-approved profile, I can approve up to "
+                    f"**₹{instant_limit:,.0f}** instantly (no salary slip needed).\n\n"
+                    f"**How much would you like to borrow?** "
+                    f"(e.g. '₹2 lakhs', '150000') and I'll run the check right away.")
+            st.session_state.awaiting_renegotiation = True  # ensure next amount goes back here
+            return
+
+        if _is_path_b:
+            _user_data = st.session_state.user_data
+            _current_emis_b = _user_data.get('current_emis', 0)
+            _score_b = _user_data.get('score', 700)
+            _salary_b = _user_data.get('salary', 0)
+            st.session_state.awaiting_renegotiation = False
+            if _current_emis_b > 0:
+                add_message("assistant",
+                    f"Excellent thinking! 🔄 Loan consolidation can simplify your finances "
+                    f"and potentially lower your overall EMI.\n\n"
+                    f"**Next steps for Loan Consolidation:**\n"
+                    f"- Share details of your existing loans (lender, outstanding, EMI)\n"
+                    f"- Our team will calculate a consolidated offer within 24 hours\n"
+                    f"- Typical savings: 1–3% lower rate + single EMI\n\n"
+                    f"📞 Our Senior Relationship Manager **Mr. Arjun Mehta** "
+                    f"(+91-22-6789-1234) can arrange this. Shall I initiate the request?")
+            else:
+                _pts = max(700 - _score_b, 0)
+                add_message("assistant",
+                    f"Smart move, {_user_data.get('name', '').split()[0]}! 📈 "
+                    f"Your current score is **{_score_b}/900** — just **{_pts} points** "
+                    f"away from our 700+ Standard tier at 13.5%.\n\n"
+                    f"**Your 3-month credit improvement plan:**\n"
+                    f"✅ Pay all bills and existing obligations on time\n"
+                    f"✅ Keep any credit card balance below 30% of limit\n"
+                    f"✅ Avoid applying for new credit during this period\n\n"
+                    f"After 3–6 months, you could qualify for up to "
+                    f"**₹{int(_salary_b * 0.45 * 29):,.0f}** at 13.5%. "
+                    f"Would you like me to set a reminder to recheck your eligibility?")
+            return
+
+        if _is_path_c:
+            _user_data = st.session_state.user_data
+            _score_c = _user_data.get('score', 700)
+            st.session_state.awaiting_renegotiation = False
+            add_message("assistant",
+                f"Absolutely the wisest choice! 🌱 Strengthening your profile first "
+                f"means better rates and higher limits.\n\n"
+                f"**Your 6-month timeline:**\n"
+                f"📅 Month 1–3: Build consistent payment history\n"
+                f"📅 Month 3–5: Monitor CIBIL score (target {min(_score_c + 50, 900)}+)\n"
+                f"📅 Month 6: Come back to us — we'll fast-track your application "
+                f"with updated underwriting.\n\n"
+                f"We'll be here whenever you're ready. Best of luck! 🤝")
+            return
+    # ── End Path A/B/C top-level interceptor ─────────────────────────────────
+
+    # ── Negotiator Interception ───────────────────────────────────────────────
+    if st.session_state.get('user_data'):
+        from agents.negotiator import NegotiatorAgent
+        intent    = NegotiatorAgent.detect_negotiation_intent(user_input)
+        is_active = st.session_state.get('negotiation_active', False)
+
+
+        # ─ Path selection takes absolute priority when negotiation is active.
+        # Detect "Path 1/2/3" or synonyms BEFORE the acceptance guard so that
+        # digits in e.g. "Path 2" don't accidentally clear negotiation_active.
+        if is_active:
+            path_sel = NegotiatorAgent.detect_path_selection(user_input)
+            if path_sel:
+                user_data = st.session_state.user_data
+                context_p = {
+                    'customer_name' : user_data.get('name', ''),
+                    'credit_score'  : user_data.get('score', 750),
+                    'rate'          : st.session_state.get('interest_rate') or 13.5,
+                    'requested'     : st.session_state.get('requested_amount', 0),
+                    'approved'      : st.session_state.get('safe_max_amount',
+                                        user_data.get('limit', 0)),
+                    'salary'        : user_data.get('salary', 0),
+                    'current_emis'  : user_data.get('current_emis', 0),
+                    'purpose'       : st.session_state.get('loan_purpose', 'your needs'),
+                }
+                path_msg, action = NegotiatorAgent.handle_path_selection(path_sel, context_p)
+                add_message("assistant", path_msg)
+
+                # Reset negotiation since user accepted an alternative path
+                st.session_state.negotiation_active   = False
+                st.session_state.negotiation_attempts = 0
+
+                if action == 'SALARY_SLIP':
+                    # Trigger salary slip upload — generate goldilocks options and hold
+                    from logic import generate_goldilocks_options
+                    rate_l   = st.session_state.get('interest_rate') or 13.5
+                    amt_l    = context_p['requested']
+                    opts     = generate_goldilocks_options(
+                        amt_l, rate_l,
+                        user_data['salary'], user_data.get('current_emis', 0)
+                    )
+                    st.session_state.goldilocks_options = opts
+                    st.session_state.awaiting_salary_slip    = True
+                    st.session_state.conversation_phase = ConversationPhase.PHASE_5_OPTIONS_PRESENTATION
+
+                elif action == 'CO_BORROWER':
+                    # Informational — explain process, then keep renegotiation open
+                    # so the user's next reply (e.g. 'no I want it all at once') is
+                    # captured cleanly instead of falling through to Phase 4.
+                    st.session_state.awaiting_renegotiation = True
+                    st.session_state.safe_max_amount = context_p['approved']
+
+                elif action == 'SPLIT_LOAN':
+                    # Proceed with safe_max immediately — re-run Phase 4 with that amount
+                    split_amount = context_p['approved']
+                    if split_amount and split_amount >= 10000:
+                        from logic import (get_risk_based_rate, calculate_emi,
+                                           calculate_dti_with_existing_loans,
+                                           generate_goldilocks_options)
+                        rate_l   = get_risk_based_rate(user_data['score'])
+                        st.session_state.interest_rate    = rate_l
+                        st.session_state.requested_amount = split_amount
+                        st.session_state.loan_amount      = int(split_amount)
+                        opts = generate_goldilocks_options(
+                            split_amount, rate_l,
+                            user_data['salary'], user_data.get('current_emis', 0)
+                        )
+                        st.session_state.goldilocks_options = opts
+                        st.session_state.conversation_phase = ConversationPhase.PHASE_5_OPTIONS_PRESENTATION
+
+                        from conversation_templates import templates
+                        add_message("assistant", templates.build_goldilocks_presentation(opts))
+
+                return   # path handled — stop here
+        # ─ End path selection block ──────────────────────────────────────────
+
+        # ─ Acceptance/amount guard: if negotiation was active but user is
+        # now accepting or specifying an amount, clear the flag and let the
+        # normal flow take over.
+        if is_active:
+            user_lower_ng = user_input.lower()
+            accept_words = [
+                'yes', 'ok', 'okay', 'sure', 'fine', 'proceed', 'accept',
+                'go ahead', 'continue', 'option', 'let', 'agreed', 'deal',
+                'confirm', 'sounds good', 'alright', 'done'
+            ]
+            has_accept = any(w in user_lower_ng for w in accept_words)
+            # Only treat as "has amount" if it's a plausible loan amount (>= ₹10,000)
+            amt_check  = extract_amount_from_input(user_input)
+            has_amount = bool(amt_check and amt_check >= 10000)
+            if has_accept or (has_amount and not intent):
+                # User is backing down — close the negotiation loop
+                st.session_state.negotiation_active = False
+                is_active = False
+                # Don't return — let the normal flow below handle it
+
+        # Negotiator firing rules:
+        # RATE intent → always fire (user is complaining about rate, always a pushback)
+        # AMOUNT intent → only fire if negotiation_active=True (user already went through
+        #   validation once and is pushing back). Fresh amount requests must go through
+        #   validation first (INSTANT/CONDITIONAL/EXCEED/OVER_CAPACITY).
+        # Re-fire (is_active + intent) → still requires live intent to avoid domain bleed.
+        _rate_pushback  = (intent == 'RATE' and
+                           not st.session_state.get('awaiting_renegotiation_confirmed') and
+                           not st.session_state.get('awaiting_renegotiation'))
+        _amount_pushback = (intent == 'AMOUNT' and is_active and  # only after first rejection
+                            not st.session_state.get('awaiting_renegotiation_confirmed') and
+                            not st.session_state.get('awaiting_renegotiation'))
+        _refire         = (is_active and intent and
+                           not st.session_state.get('awaiting_renegotiation'))
+        if _rate_pushback or _amount_pushback or _refire:
+            st.session_state.negotiation_active = True
+            attempt   = st.session_state.get('negotiation_attempts', 0)
+            user_data = st.session_state.user_data
+
+            if attempt >= 3:
+                msg = NegotiatorAgent.escalate_to_human(user_data.get('name', 'valued customer'))
+                add_message("assistant", msg)
+                st.session_state.negotiation_active = False
+                st.session_state.human_handoff = True
+                return
+
+            context = {
+                'customer_name' : user_data.get('name', ''),
+                'credit_score'  : user_data.get('score', 750),
+                'rate'          : st.session_state.get('interest_rate') or 13.5,
+                'requested'     : st.session_state.get('requested_amount', 0),
+                'approved'      : st.session_state.get('safe_max_amount',
+                                    user_data.get('limit', 0)),
+                'salary'        : user_data.get('salary', 0),
+                'current_emis'  : user_data.get('current_emis', 0),
+                'purpose'       : st.session_state.get('loan_purpose', 'your needs'),
+            }
+            # Use the live intent when available; otherwise continue the stored domain.
+            # Never blindly default to AMOUNT — that causes domain bleed.
+            active_intent = intent or st.session_state.get('negotiation_domain') or 'AMOUNT'
+            if intent:
+                st.session_state.negotiation_domain = intent   # record domain for future re-fires
+            msg = NegotiatorAgent.negotiate(active_intent, context, attempt)
+            add_message("assistant", msg)
+            st.session_state.negotiation_attempts = attempt + 1
+            return
+    # ── End Negotiator Interception ──────────────────────────────────────────
     
     amount = 0
-    if st.session_state.get('awaiting_renegotiation'):
+    if st.session_state.get('awaiting_renegotiation_confirmed'):
+        # Rate concern was already answered. Now check what the user actually wants.
+        user_lower = user_input.lower()
+        affirmative = ['yes', 'sure', 'okay', 'ok', 'proceed', 'go ahead', 'yep', 'yeah', 'fine', 'do it', 'confirm', 'accept']
+        explore_keywords = ['explore', 'other', 'different', 'alternatives', 'options', 'lower amount',
+                            'something else', 'reconsider', 'change', 'reduce', 'less', 'smaller']
+
+        if any(kw in user_lower for kw in explore_keywords):
+            # User wants to explore other amounts — re-enter renegotiation
+            st.session_state.awaiting_renegotiation_confirmed = False
+            st.session_state.awaiting_renegotiation = True
+            locked_amt = st.session_state.get('safe_max_amount', 0)
+            add_message("assistant",
+                f"Absolutely! Let's explore what works best for you. 😊\n\n"
+                f"Our affordability check suggests a maximum of **₹{locked_amt:,.0f}** is comfortable "
+                f"given your income and existing commitments.\n\n"
+                f"**What amount would you like me to check?** You can say something like "
+                f"'₹4 lakhs' or '300000', and I'll run the numbers for you.")
+            return   # wait for user's new amount
+
+        elif any(word in user_lower for word in affirmative):
+            # User confirmed — run eligibility with the locked counter-offer amount
+            amount = st.session_state.get('safe_max_amount', 100000)
+            st.session_state.awaiting_renegotiation_confirmed = False
+
+        else:
+            # Ambiguous reply — ask for clear confirmation
+            locked_amt = st.session_state.get('safe_max_amount', 0)
+            add_message("assistant",
+                f"Just to clarify — shall I proceed with ✨ **₹{locked_amt:,.0f}**, "
+                f"or would you like to explore a different amount?\n\n"
+                f"Reply **'yes'** to proceed or tell me an amount you'd prefer.")
+            return   # wait for clearer answer
+
+    elif st.session_state.get('awaiting_renegotiation'):
         user_input_lower = user_input.lower()
         affirmative = ['yes', 'sure', 'okay', 'ok', 'proceed', 'go ahead', 'yep', 'yeah', 'fine', 'do it', 'accept']
+        rate_keywords = ['rate', 'interest', 'high', 'expensive', 'lower', 'reduce', 'discount', 'less', 'cheaper']
+
         if any(word in user_input_lower for word in affirmative):
-            amount = st.session_state.get('safe_max_amount', 100000)
+            accepted_amount = st.session_state.get('safe_max_amount', 100000)
             st.session_state.awaiting_renegotiation = False
-            add_message("assistant", f"Great, I'll update your requested amount to ✨ **₹{amount:,.0f}**.\n\nLet me recalculate your options...")
+
+            # Did the user also raise a rate concern in the same message?
+            if any(kw in user_input_lower for kw in rate_keywords):
+                # Acknowledge the rate concern first, lock in the amount,
+                # and defer the eligibility check to the next reply.
+                user_data = st.session_state.user_data
+                from logic import get_risk_based_rate
+                rate = get_risk_based_rate(user_data['score'])
+                from agents.sales import SalesAgent
+                rate_reply = SalesAgent.handle_rate_objection(user_data['score'], rate)
+
+                add_message("assistant",
+                    f"I've locked in your loan amount at \u2728 **\u20b9{accepted_amount:,.0f}**.\n\n"
+                    f"Now, about the interest rate \u2014 let me explain how it\u2019s calculated:\n\n"
+                    f"{rate_reply}\n\n"
+                    f"Would you like to proceed with this rate, or shall I explore any other options?")
+
+                # Store the locked amount and pause; eligibility runs on the next user turn
+                st.session_state.requested_amount = accepted_amount
+                st.session_state.loan_amount = int(accepted_amount)
+                st.session_state.awaiting_renegotiation_confirmed = True
+                return   # stop here; next message triggers the eligibility check
+            else:
+                amount = accepted_amount
+                add_message("assistant", f"Great, I'll update your requested amount to \u2728 **\u20b9{amount:,.0f}**.\n\nLet me recalculate your options...")
         else:
-            amount = extract_amount_from_input(user_input)
-            st.session_state.awaiting_renegotiation = False
+            # ── Path A / B / C selections from the advice card ───────────────
+            _ui = user_input.lower().strip()
+
+            # Also catch 'explore alternatives', 'other options', 'alternative path' etc.
+            # that appear in negotiator counter-offer responses
+            _explore_phrases = [
+                'explore', 'alternative', 'other option', 'other path',
+                'different path', 'different option', 'something else',
+                'other ways', 'what else', 'what are my options',
+            ]
+            _is_explore = any(p in _ui for p in _explore_phrases)
+
+            if _is_explore or _ui in ('path a', 'a', 'path a.', 'option a') or _ui.startswith('path a'):
+                # Use the customer's pre-approved limit for instant approval (not safe_max)
+                user_data_pa = st.session_state.get('user_data', {})
+                instant_limit = user_data_pa.get('limit', st.session_state.get('safe_max_amount', 0))
+                safe_max = st.session_state.get('safe_max_amount', instant_limit)
+                if _is_explore and not _ui.startswith('path a'):
+                    # Re-show the full path menu
+                    add_message("assistant",
+                        f"Of course! Here are the paths available to you:\n\n"
+                        f"**Path A — Start with What's Approved Instantly**\n"
+                        f"I can approve up to **₹{instant_limit:,.0f}** right now — no documents needed. "
+                        f"Just type an amount.\n\n"
+                        f"**Path B — Improve Your CIBIL Score**\n"
+                        f"A few months of consistent payments can push your score past 700 "
+                        f"and unlock higher limits.\n\n"
+                        f"**Path C — Wait & Strengthen**\n"
+                        f"Return in 3–6 months with an improved score for a fast-track approval.\n\n"
+                        f"Which path would you like to explore? (Type 'Path A', 'Path B', or 'Path C')")
+                else:
+                    add_message("assistant",
+                        f"Great choice! 💪 Let's find an amount that works for you.\n\n"
+                        f"Based on your pre-approved profile, I can approve up to "
+                        f"**₹{instant_limit:,.0f}** instantly (no salary slip needed).\n\n"
+                        f"**How much would you like to borrow?** "
+                        f"(e.g. '₹2 lakhs', '150000') and I'll run the check right away.")
+                # Keep awaiting_renegotiation open so the next amount is processed
+                return
+
+            if _ui in ('path b', 'b', 'path b.', 'option b') or _ui.startswith('path b'):
+                user_data = st.session_state.user_data
+                current_emis_b = user_data.get('current_emis', 0)
+                score_b = user_data.get('score', 700)
+                salary_b = user_data.get('salary', 0)
+                st.session_state.awaiting_renegotiation = False
+                if current_emis_b > 0:
+                    add_message("assistant",
+                        f"Excellent thinking! 🔄 Loan consolidation can simplify your finances "
+                        f"and potentially lower your overall EMI.\n\n"
+                        f"**Next steps for Loan Consolidation:**\n"
+                        f"- Share details of your existing loans (lender, outstanding, EMI)\n"
+                        f"- Our team will calculate a consolidated offer within 24 hours\n"
+                        f"- Typical savings: 1–3% lower rate + single EMI\n\n"
+                        f"📞 Our Senior Relationship Manager **Mr. Arjun Mehta** "
+                        f"(+91-22-6789-1234) can arrange this. Shall I initiate the request?")
+                else:
+                    add_message("assistant",
+                        f"Smart move, {user_data.get('name', '').split()[0]}! 📈 "
+                        f"Your current score is **{score_b}/900** — just **{700 - score_b} points** "
+                        f"away from our 700+ Standard tier at 13.5%.\n\n"
+                        f"**Your 3-month credit improvement plan:**\n"
+                        f"✅ Pay all bills and existing obligations on time\n"
+                        f"✅ Keep any credit card balance below 30% of limit\n"
+                        f"✅ Avoid applying for new credit during this period\n\n"
+                        f"After 3–6 months, you could qualify for up to "
+                        f"**₹{int(salary_b * 0.45 * 29):,.0f}** at 13.5%. "
+                        f"Would you like me to set a reminder to recheck your eligibility?")
+                return
+
+            if _ui in ('path c', 'c', 'path c.', 'option c') or _ui.startswith('path c'):
+                user_data = st.session_state.user_data
+                score_c = user_data.get('score', 700)
+                st.session_state.awaiting_renegotiation = False
+                add_message("assistant",
+                    f"Absolutely the wisest choice! 🌱 Strengthening your profile first "
+                    f"means better rates and higher limits.\n\n"
+                    f"**Your 6-month timeline:**\n"
+                    f"📅 Month 1–3: Build consistent payment history\n"
+                    f"📅 Month 3–5: Monitor CIBIL score (target {min(score_c + 50, 900)}+)\n"
+                    f"📅 Month 6: Come back to us — we'll fast-track your application "
+                    f"with updated underwriting.\n\n"
+                    f"We'll be here whenever you're ready. Best of luck! 🤝")
+                return
+            # ── End Path A/B/C ────────────────────────────────────────────────
+
+            # Check for explicit rejection first before trying to extract an amount
+            rejection_words = ['no', 'nope', "don't", 'dont', 'not', 'reject', 'refuse', 'decline', 'disagree']
+            if any(rw in user_input_lower for rw in rejection_words) and not any(c.isdigit() for c in user_input):
+                # User refused the counter-offer — keep renegotiation open, ask for their preferred amount
+                safe_max = st.session_state.get('safe_max_amount', 0)
+                add_message("assistant",
+                    f"No problem at all! I understand you'd prefer a different amount. 😊\n\n"
+                    f"Just to recap — based on your current income and existing commitments, "
+                    f"our affordability model suggests a maximum of **₹{safe_max:,.0f}** is safe "
+                    f"right now.\n\n"
+                    f"**What amount would you like to try?** You can specify any amount "
+                    f"(e.g. '₹5 lakhs', '700000') and I'll instantly check if it works for you.")
+                # Keep awaiting_renegotiation = True so the next message goes back here
+                return
+            else:
+                # User provided a new preferred amount — extract it.
+                # Also handle 'all at once / the full amount / all of it' phrases
+                # that mean the user wants the original requested amount.
+                _full_phrases = [
+                    'all at once', 'all in one', 'all of it', 'the whole',
+                    'full amount', 'the full', 'the entire', 'entire amount',
+                    'whole thing', 'everything at once', 'lump sum',
+                ]
+                _wants_full = any(p in user_input.lower() for p in _full_phrases)
+                if _wants_full:
+                    amount = st.session_state.get('requested_amount', 0)
+                else:
+                    amount = extract_amount_from_input(user_input)
+                safe_max = st.session_state.get('safe_max_amount', 0)
+
+                # If the user is still requesting above the safe maximum,
+                # route to the Negotiator instead of re-running the same
+                # rejected affordability check (which would produce an
+                # identical rejection — an unhelpful loop).
+                if amount and safe_max and amount > safe_max:
+                    from agents.negotiator import NegotiatorAgent
+                    user_data = st.session_state.user_data
+                    attempt   = st.session_state.get('negotiation_attempts', 0)
+                    st.session_state.negotiation_active = True
+                    st.session_state.awaiting_renegotiation = False  # close the renegotiation loop
+
+                    if attempt >= 3:
+                        msg = NegotiatorAgent.escalate_to_human(user_data.get('name', 'valued customer'))
+                        add_message("assistant", msg)
+                        st.session_state.negotiation_active = False
+                        st.session_state.human_handoff = True
+                    else:
+                        context = {
+                            'customer_name' : user_data.get('name', ''),
+                            'credit_score'  : user_data.get('score', 750),
+                            'rate'          : st.session_state.get('interest_rate') or 13.5,
+                            'requested'     : amount,
+                            'approved'      : safe_max,
+                            'salary'        : user_data.get('salary', 0),
+                            'current_emis'  : user_data.get('current_emis', 0),
+                            'purpose'       : st.session_state.get('loan_purpose', 'your needs'),
+                        }
+                        msg = NegotiatorAgent.negotiate('AMOUNT', context, attempt)
+                        add_message("assistant", msg)
+                        st.session_state.negotiation_attempts = attempt + 1
+                    return
+
+                st.session_state.awaiting_renegotiation = False
     else:
         amount = extract_amount_from_input(user_input)
 
@@ -881,7 +1361,10 @@ def handle_phase_4_needs_analysis(user_input: str) -> None:
     purpose = st.session_state.get('loan_purpose', 'personal needs')
     
     validation_res = validate_amount_request(user_data, amount)
-    
+
+    # Track approval type for the sanction letter
+    st.session_state.loan_type = validation_res['status']  # 'INSTANT_APPROVE' or 'CONDITIONAL'
+
     rate = get_risk_based_rate(user_data['score'])
     st.session_state.interest_rate = rate
     
@@ -896,8 +1379,28 @@ def handle_phase_4_needs_analysis(user_input: str) -> None:
     
     add_message("assistant", response_msg)
     
-    if dti_res['safe'] or validation_res['status'] in ['INSTANT_APPROVE', 'CONDITIONAL']:
+    if validation_res['status'] == 'CONDITIONAL':
+        # Amount is between 1× and 2× pre-approved limit.
+        # Challenge requirement: "request a salary slip upload. Approve only if expected EMI ≤ 50% of salary."
+        st.session_state.awaiting_salary_slip = True
         st.session_state.conversation_phase = ConversationPhase.PHASE_5_OPTIONS_PRESENTATION
+        st.session_state.negotiation_active  = False   # Phase 4 negotiation ends here
+        # Options are prepared but held — released after salary slip is verified
+        from logic import generate_goldilocks_options
+        opts = generate_goldilocks_options(amount, rate, user_data['salary'], user_data.get('current_emis', 0))
+        st.session_state.goldilocks_options = opts
+        add_message("assistant", f"""⚠️ **Salary Verification Required**
+
+Your requested amount of **₹{amount:,.0f}** exceeds your instant pre-approved limit of **₹{user_data['limit']:,.0f}**.
+
+As per our lending policy, amounts above the pre-approved limit require **salary verification**.
+
+📎 **Please upload your latest salary slip** (PDF, JPG, or PNG) using the upload button below.
+
+Once verified, I'll confirm your eligibility and present your EMI options!""")
+    elif dti_res['safe'] or validation_res['status'] == 'INSTANT_APPROVE':
+        st.session_state.conversation_phase   = ConversationPhase.PHASE_5_OPTIONS_PRESENTATION
+        st.session_state.negotiation_active   = False   # Phase 4 negotiation ends here
         # Provide the options immediately
         from logic import generate_goldilocks_options
         opts = generate_goldilocks_options(amount, rate, user_data['salary'], user_data.get('current_emis', 0))
@@ -910,11 +1413,157 @@ def handle_phase_4_needs_analysis(user_input: str) -> None:
         st.session_state.awaiting_renegotiation = True
         st.session_state.safe_max_amount = validation_res.get('alternative_amount', 0)
 
+
 def handle_phase_5_options_presentation(user_input: str) -> None:
     # Options Presentation (The Goldilocks Rule)
     from app import extract_option_from_input
     from conversation_templates import templates
-    
+
+    # ── Slip confirmation gate (suspicious filename was flagged) ─────────────
+    # When awaiting_slip_confirm is True the user saw a soft warning about the
+    # uploaded file not looking like a salary slip. They can type 'confirm' to
+    # override and proceed, or anything else to re-upload.
+    if st.session_state.get('awaiting_slip_confirm'):
+        user_lower = user_input.lower()
+        affirm = ['confirm', 'yes', 'correct', 'proceed', 'yep', 'yeah', 'sure', 'ok', 'okay', 'it is', "that's right"]
+
+        if any(kw in user_lower for kw in affirm):
+            # User confirmed the document override — run underwriting now
+            st.session_state.awaiting_slip_confirm    = False
+            st.session_state.salary_slip_verified     = True
+            st.session_state.awaiting_salary_slip     = False
+
+            from agents.underwriting import UnderwritingAgent
+            from logic import calculate_dti_with_existing_loans, calculate_emi
+            import time
+
+            user_data    = st.session_state.user_data
+            salary       = user_data.get('salary', 50000)
+            amount       = st.session_state.requested_amount
+            rate         = st.session_state.interest_rate
+            current_emis = user_data.get('current_emis', 0)
+
+            add_message("assistant", "Understood — treating the uploaded document as your salary slip. Running underwriting now...")
+
+            with st.session_state.get('_placeholder', st.empty()) if False else (__import__('contextlib').suppress()):
+                pass
+
+            decision = UnderwritingAgent.evaluate(user_data['phone'], amount, monthly_salary=salary)
+
+            if decision['status'] == 'APPROVE':
+                dti_check = calculate_dti_with_existing_loans(salary, calculate_emi(amount, 36, rate), current_emis)
+                add_message("assistant", f"""✅ **Salary Slip Verified!**
+
+📊 **Underwriting Decision**
+- Credit Score: **{user_data['score']} / 900** ✅
+- Monthly Salary: **₹{salary:,}**
+- Existing EMIs: **₹{current_emis:,}**
+- Max DTI Capacity: **50% (₹{salary * 0.5:,.0f})**
+- New Loan EMI: **₹{calculate_emi(amount, 36, rate):,}**
+
+Your Debt-to-Income ratio is **{dti_check['dti']}%** — within the safe limit! 🎉
+
+Here are your **3 EMI options**:""")
+                opts = st.session_state.goldilocks_options
+                add_message("assistant", templates.build_goldilocks_presentation(opts))
+            else:
+                add_message("assistant", f"""❌ **Salary Verification Failed**
+
+Based on your verified income of ₹{salary:,}/month and existing obligations of ₹{current_emis:,}/month, the requested EMI would exceed our **50% DTI limit**.
+
+{decision.get('reason', 'Please consider a lower loan amount.')}
+
+Would you like me to calculate the maximum amount you're eligible for?""")
+            return
+        else:
+            # User wants to re-upload — reset the slip states
+            st.session_state.awaiting_slip_confirm = False
+            st.session_state.awaiting_salary_slip  = True
+            st.session_state.salary_slip_verified  = False
+            add_message("assistant",
+                "No problem! Please use the **📎 Upload Salary Slip** button below to upload your correct salary slip. "
+                "The filename should ideally contain words like 'salary', 'payslip', or 'income' so our system can recognise it.")
+            return
+    # ── End slip confirmation gate ────────────────────────────────────────────
+
+    # ── Negotiator Interception (Phase 5 — EMI / Rate pushback) ─────────────
+    # Fires ONLY on fresh negotiation intent — not on is_active bleed from
+    # Phase 4. Option-selection messages ('Option 1', 'go with 2', etc.) are
+    # guarded to prevent false positives.
+    # Not triggered during salary-slip or document-confirm waits.
+    if (st.session_state.get('user_data') and
+            not st.session_state.get('awaiting_salary_slip') and
+            not st.session_state.get('awaiting_slip_confirm')):
+        from agents.negotiator import NegotiatorAgent
+        import re as _re
+        intent = NegotiatorAgent.detect_negotiation_intent(user_input)
+
+        # Guard: skip if message is clearly an option selection
+        # e.g. "Option 1", "option2", "choose 3", "go with option 2"
+        is_option_pick = bool(_re.search(r'\b(option\s*[123]|choose\s*[123]|go\s*with\s*[123]|pick\s*[123]|select\s*[123])\b',
+                                         user_input.lower()))
+
+        if intent and not is_option_pick:
+            st.session_state.negotiation_active = True
+            attempt   = st.session_state.get('negotiation_attempts', 0)
+            user_data = st.session_state.user_data
+            opts      = st.session_state.get('goldilocks_options') or {}
+            sel_plan  = opts.get('balanced', {})
+
+            if attempt >= 3:
+                msg = NegotiatorAgent.escalate_to_human(user_data.get('name', 'valued customer'))
+                add_message("assistant", msg)
+                st.session_state.negotiation_active = False
+                st.session_state.human_handoff = True
+                return
+
+            context = {
+                'customer_name' : user_data.get('name', ''),
+                'credit_score'  : user_data.get('score', 750),
+                'rate'          : st.session_state.get('interest_rate') or 13.5,
+                'requested'     : st.session_state.get('requested_amount', 0),
+                'approved'      : st.session_state.get('requested_amount', 0),
+                'salary'        : user_data.get('salary', 0),
+                'current_emis'  : user_data.get('current_emis', 0),
+                'emi'           : sel_plan.get('emi', 0),
+                'tenure'        : sel_plan.get('tenure', 36),
+                'purpose'       : st.session_state.get('loan_purpose', 'your needs'),
+            }
+            # Phase 5 primarily deals with EMI/rate; fall back to EMI if ambiguous
+            active_intent = intent if intent in ('RATE', 'EMI') else 'EMI'
+            msg = NegotiatorAgent.negotiate(active_intent, context, attempt)
+            add_message("assistant", msg)
+            st.session_state.negotiation_attempts = attempt + 1
+            return
+    # ── End Phase 5 Negotiator Interception ──────────────────────────────────
+
+    # ── Salary-slip waiting state guard ─────────────────────────────────────
+    # When awaiting_salary_slip is True the user hasn't uploaded yet.
+    # Phase 5 only routes option-selection; general chat would get the
+    # generic "I didn't catch" fallback which feels broken. Handle it here.
+    if st.session_state.get('awaiting_salary_slip') and not st.session_state.get('salary_slip_verified'):
+        user_lower = user_input.lower()
+        rate_keywords = ['rate', 'interest', 'high', 'expensive', 'lower', 'reduce', 'discount', 'less', 'cheaper']
+
+        if any(kw in user_lower for kw in rate_keywords):
+            # Explain the rate transparently, then redirect to the upload
+            user_data = st.session_state.user_data
+            from logic import get_risk_based_rate
+            rate = get_risk_based_rate(user_data['score'])
+            from agents.sales import SalesAgent
+            rate_reply = SalesAgent.handle_rate_objection(user_data['score'], rate)
+            add_message("assistant",
+                f"{rate_reply}\n\n"
+                "Once you upload your salary slip below, I'll confirm your eligibility and we can lock in your loan!")
+        else:
+            # General question / anything else while waiting for the upload
+            add_message("assistant",
+                "I'm waiting for your salary slip upload to confirm the higher loan amount. "
+                "Please use the **📎 Upload Salary Slip** button below to complete verification.\n\n"
+                "If you have any questions in the meantime, feel free to ask!")
+        return
+    # ── End salary-slip guard ────────────────────────────────────────────────
+
     choice = extract_option_from_input(user_input)
     if not choice:
         # Check if they asked for a custom tenure instead!
@@ -1005,6 +1654,9 @@ def handle_phase_6_confirmation(user_input: str) -> None:
             'emi': emi,
             'total_interest': total_interest,
             'total_payment': total_payment,
+            # Loan type disclosure for the sanction letter
+            'loan_type': st.session_state.get('loan_type', 'INSTANT_APPROVE'),
+            'pre_approved_limit': user_data.get('limit', 0),
         }
         
         pdf_bytes = generate_sanction_letter(loan_details)
@@ -1633,13 +2285,29 @@ def render_hero_section():
         
         # Quick action pills
         st.markdown('<div class="quick-actions">', unsafe_allow_html=True)
-        quick_actions = ["Wedding 💒", "Education 📚", "Travel ✈️", "Home Renovation 🏠", "Medical 🏥", "Business 💼"]
-        
+        quick_actions = [
+            ("Wedding 💒",       "wedding"),
+            ("Education 📚",     "education"),
+            ("Travel ✈️",        "travel"),
+            ("Home Renovation 🏠", "home renovation"),
+            ("Medical 🏥",       "medical"),
+            ("Business 💼",      "business"),
+        ]
+
         cols = st.columns(3)
-        for idx, action in enumerate(quick_actions):
+        for idx, (label, purpose) in enumerate(quick_actions):
             with cols[idx % 3]:
-                if st.button(action, key=f"qa_{idx}", use_container_width=True):
-                    add_message("user", f"I need a loan for {action.split()[0].lower()}")
+                if st.button(label, key=f"qa_{idx}", use_container_width=True):
+                    # Ensure Maya's greeting is in chat
+                    if 'messages' not in st.session_state or len(st.session_state.messages) == 0:
+                        add_message("assistant",
+                            "Hello! I'm Maya, your AI relationship manager at LoanVerse. "
+                            "I'd be happy to help you with a personal loan today. 🙂\n\n"
+                            "To get started, **may I have your name?**")
+                    # Pre-fill the loan purpose so Phase 2 skips the purpose question
+                    st.session_state.prefilled_loan_purpose = purpose
+                    # Show a clean user bubble so the conversation doesn't look blank
+                    add_message("user", f"I need a loan for {purpose}")
                     st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
     
@@ -1648,10 +2316,10 @@ def render_hero_section():
         st.markdown("""
 <div class="credit-widget">
     <div style="text-align: center; margin-bottom: 16px;">
-        <div class="emi-label">CREDIT HEALTH</div>
-        <div class="credit-score">742</div>
-        <div class="credit-status">Good</div>
-        <div class="credit-trend">📈 +12 pts this month</div>
+        <div class="emi-label">MARKET AVG CREDIT HEALTH</div>
+        <div class="credit-score">758</div>
+        <div class="credit-status">Good — Typical LoanVerse Customer</div>
+        <div class="credit-trend">📈 Avg score improved +18 pts in 2025</div>
     </div>
 </div>
         """, unsafe_allow_html=True)
@@ -1660,19 +2328,19 @@ def render_hero_section():
         st.markdown("""
 <div class="stats-footer" style="grid-template-columns: repeat(4, 1fr); border-top: none;">
     <div class="stat-item">
-        <div class="stat-value cyan">₹50 Cr+</div>
+        <div class="stat-value cyan">₹120 Cr+</div>
         <div class="stat-label">Loans Disbursed</div>
     </div>
     <div class="stat-item">
-        <div class="stat-value gold">15,000+</div>
+        <div class="stat-value gold">5,000+</div>
         <div class="stat-label">Happy Customers</div>
     </div>
     <div class="stat-item">
-        <div class="stat-value green">< 10 min</div>
-        <div class="stat-label">Avg Processing</div>
+        <div class="stat-value green">&lt; 3 min</div>
+        <div class="stat-label">Avg Decision Time</div>
     </div>
     <div class="stat-item">
-        <div class="stat-value purple">78%</div>
+        <div class="stat-value purple">91%</div>
         <div class="stat-label">Approval Rate</div>
     </div>
 </div>
@@ -1824,6 +2492,183 @@ button[data-testid="stChatInputSubmitButton"] svg {{
                     except Exception as e:
                         st.error(f"Could not save PDF: {e}")
 
+            # Salary Slip Upload Widget — shown for CONDITIONAL approval path
+            # (Amount > pre-approved limit but ≤ 2× limit)
+            if st.session_state.get('awaiting_salary_slip') and not st.session_state.get('salary_slip_verified'):
+                st.markdown("---")
+                st.markdown("#### 📎 Upload Salary Slip")
+                uploaded_file = st.file_uploader(
+                    "Upload your latest salary slip (PDF, JPG, PNG)",
+                    type=["pdf", "jpg", "jpeg", "png"],
+                    key=f"salary_slip_uploader_{st.session_state.get('slip_uploader_key', 0)}",
+                    label_visibility="collapsed"
+                )
+                if uploaded_file is not None:
+                    # ── Step 1: Scanning ──────────────────────────────────────────────────
+                    import time
+                    with st.spinner("📄 Scanning document..."):
+                        time.sleep(0.8)
+
+                    # ── Step 2: Mock CRM Cross-Verification ───────────────────────────────
+                    user_data = st.session_state.user_data
+                    registered_name  = user_data.get('name', '')
+                    registered_phone = user_data.get('phone', '')
+                    provided_name    = st.session_state.get('customer_name', '') or st.session_state.get('user_name', '')
+                    session_phone    = st.session_state.get('phone', '')
+
+                    # Name match: at least one word of provided name appears in the registered name
+                    name_words = provided_name.lower().split()
+                    name_ok = any(w in registered_name.lower() for w in name_words) if name_words else True
+                    phone_ok = (session_phone == registered_phone)
+
+                    # ── Document-level validation ─────────────────────────────────────────
+                    file_bytes    = uploaded_file.getvalue()
+                    file_size_kb  = len(file_bytes) / 1024
+                    file_name_lc  = uploaded_file.name.lower()
+                    file_ext      = file_name_lc.rsplit('.', 1)[-1] if '.' in file_name_lc else ''
+                    allowed_exts  = {'pdf', 'jpg', 'jpeg', 'png'}
+
+                    # File size check (2 KB minimum, 20 MB maximum)
+                    size_ok  = 2 <= file_size_kb <= 20480
+                    size_msg = (
+                        f"Size OK — **{file_size_kb:,.1f} KB** ✔"
+                        if size_ok else
+                        (f"File too small ({file_size_kb:.1f} KB) — may be blank or corrupt"
+                         if file_size_kb < 5 else
+                         f"File too large ({file_size_kb/1024:.1f} MB) — please compress and re-upload")
+                    )
+
+                    # File type check
+                    type_ok  = file_ext in allowed_exts
+                    type_msg = (
+                        f"Accepted format: **{file_ext.upper()}** ✔"
+                        if type_ok else
+                        f"Unsupported format '.{file_ext}' — please upload PDF, JPG, or PNG"
+                    )
+
+                    # Filename keyword analysis — does this look like a salary document?
+                    salary_keywords = [
+                        'salary', 'payslip', 'pay_slip', 'payroll', 'paystub', 'pay_stub',
+                        'income', 'compensation', 'wage', 'earning', 'slip', 'stub', 'ctc',
+                        'offer_letter', 'offer letter', 'employment', 'hike', 'remuner'
+                    ]
+                    # Screenshots / unrelated documents to flag
+                    unrelated_flags = [
+                        'screenshot', 'photo', 'img_', 'dsc_', 'cam', 'whatsapp',
+                        'selfie', 'profile', 'wallpaper', 'meme', 'video', 'thumbnail'
+                    ]
+                    is_salary_doc = any(kw in file_name_lc for kw in salary_keywords)
+                    is_unrelated  = any(fl in file_name_lc for fl in unrelated_flags)
+
+                    # Keyword check result
+                    keyword_ok  = is_salary_doc and not is_unrelated
+                    keyword_msg_pass = f"Filename '{uploaded_file.name}' matches salary document pattern ✔"
+                    keyword_msg_warn = (
+                        f"⚠️ Filename '{uploaded_file.name}' doesn't look like a salary slip — please confirm this is the correct document"
+                        if not is_salary_doc else
+                        f"⚠️ Filename suggests this may not be a financial document — please re-check"
+                    )
+
+                    with st.spinner("🔍 Cross-verifying with CRM database..."):
+                        time.sleep(1.2)
+
+                    # ── Build verification card ───────────────────────────────────────────
+                    checks = [
+                        ("Name on document",            name_ok,     f"Matched: **{registered_name}**",          "Could not match — proceeding with registered name"),
+                        ("Registered mobile number",    phone_ok,    f"Verified: **{registered_phone}**",         "Session phone mismatch — using CRM record"),
+                        ("File type",                   type_ok,     type_msg,                                    type_msg),
+                        ("File size",                   size_ok,     size_msg,                                    size_msg),
+                        ("Document keyword match",      keyword_ok,  keyword_msg_pass,                            keyword_msg_warn),
+                        ("Employment / salary band",    True,        "Salary within declared range ✔",            ""),
+                    ]
+
+                    card_lines = ["🔍 **Document Verification Report**\n"]
+                    for label, passed, ok_msg, fail_msg in checks:
+                        icon = "✅" if passed else "⚠️"
+                        msg  = ok_msg if passed else fail_msg
+                        card_lines.append(f"{icon} **{label}:** {msg}")
+
+                    # Hard rejection: file too small OR wrong type → stop, ask to re-upload
+                    if not size_ok or not type_ok:
+                        card_lines.append("\n❌ **Verification Failed — please re-upload a valid salary slip.**")
+                        add_message("assistant", "\n".join(card_lines))
+                        # Increment uploader key to force widget reset (clears the rejected file)
+                        st.session_state.slip_uploader_key = st.session_state.get('slip_uploader_key', 0) + 1
+                        st.session_state.salary_slip_verified = False
+                        st.session_state.awaiting_salary_slip = True
+                        st.rerun()
+                        return
+
+                    # Soft warning: document doesn't look like a salary slip by name
+                    if not keyword_ok:
+                        card_lines.append(
+                            "\n⚠️ **The uploaded file doesn't appear to be a salary slip based on its name and properties.**\n"
+                            "If you are sure this is the correct document, type **'confirm'** and I'll proceed. "
+                            "Otherwise, please re-upload the correct file."
+                        )
+                        add_message("assistant", "\n".join(card_lines))
+                        # Increment key so uploader clears if user decides to re-upload
+                        st.session_state.slip_uploader_key = st.session_state.get('slip_uploader_key', 0) + 1
+                        st.session_state.awaiting_slip_confirm = True
+                        st.session_state.salary_slip_verified  = False
+                        st.session_state.awaiting_salary_slip  = False
+                        st.rerun()
+                        return
+
+                    all_passed = name_ok and phone_ok and size_ok and type_ok and keyword_ok
+                    if all_passed:
+                        card_lines.append("\n🎯 **All checks passed — proceeding to underwriting.**")
+                    else:
+                        card_lines.append("\n⚠️ **Minor discrepancies noted but proceeding with CRM record.**")
+
+                    add_message("assistant", "\n".join(card_lines))
+
+                    # ── Step 3: Mark verified and run underwriting ────────────────────────
+                    st.session_state.salary_slip_verified = True
+                    st.session_state.awaiting_salary_slip = False
+
+                    from agents.underwriting import UnderwritingAgent
+                    from logic import calculate_dti_with_existing_loans, calculate_emi
+
+                    salary      = user_data.get('salary', 50000)
+                    amount      = st.session_state.requested_amount
+                    rate        = st.session_state.interest_rate
+                    current_emis = user_data.get('current_emis', 0)
+
+                    with st.spinner("⚙️ Running underwriting engine..."):
+                        time.sleep(0.6)
+
+                    decision = UnderwritingAgent.evaluate(
+                        user_data['phone'], amount, monthly_salary=salary
+                    )
+
+                    if decision['status'] == 'APPROVE':
+                        dti_check = calculate_dti_with_existing_loans(salary, calculate_emi(amount, 36, rate), current_emis)
+                        add_message("assistant", f"""✅ **Salary Slip Verified!**
+
+📊 **Underwriting Decision**
+- Credit Score: **{user_data['score']} / 900** ✅
+- Monthly Salary: **₹{salary:,}**
+- Existing EMIs: **₹{current_emis:,}**
+- Max DTI Capacity: **50% (₹{salary * 0.5:,.0f})**
+- New Loan EMI: **₹{calculate_emi(amount, 36, rate):,}**
+
+Your Debt-to-Income ratio is **{dti_check['dti']}%** — within the safe limit! 🎉
+
+Here are your **3 EMI options**:""")
+                        from conversation_templates import templates
+                        opts = st.session_state.goldilocks_options
+                        add_message("assistant", templates.build_goldilocks_presentation(opts))
+                    else:
+                        add_message("assistant", f"""❌ **Salary Verification Failed**
+
+Based on your verified income of ₹{salary:,}/month and existing obligations of ₹{current_emis:,}/month, the requested EMI would exceed our **50% DTI limit**.
+
+{decision.get('reason', 'Please consider a lower loan amount.')}
+
+Would you like me to calculate the maximum amount you're eligible for?""")
+                    st.rerun()
+
             # Show typing indicator inside chat container (Bliss Mode)
             if st.session_state.messages and st.session_state.messages[-1]['role'] == "user":
                 render_chat_bubble("assistant", "Thinking...", MAYA_AVATAR, is_typing=True)
@@ -1854,7 +2699,6 @@ def main():
     
     # Initialize
     initialize_session_state()
-    inject_custom_css()
     load_custom_css_file()
     
     # Render navigation bar

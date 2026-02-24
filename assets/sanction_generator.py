@@ -193,6 +193,43 @@ def generate_sanction_letter(loan_details):
     </para>
     """
     story.append(Paragraph(approval_text, body_style))
+    story.append(Spacer(1, 0.1*inch))
+
+    # ==================== APPROVAL TYPE DISCLOSURE ====================
+
+    loan_type = loan_details.get('loan_type', 'INSTANT_APPROVE')
+    pre_approved_limit = loan_details.get('pre_approved_limit', 0)
+    sanctioned_amount  = loan_details.get('amount', 0)
+    is_conditional     = (loan_type == 'CONDITIONAL')
+
+    if is_conditional:
+        approval_type_text = f"""
+        <para fontSize="9" leading="13" backColor="#FFF8E1" borderColor="#F59E0B"
+              borderWidth="1" borderPadding="8">
+        <b>⚠️ APPROVAL TYPE: Conditionally Approved — Enhanced Credit Limit</b><br/><br/>
+        Your sanctioned amount of <b>Rs {sanctioned_amount:,.0f}</b> exceeds your standard
+        pre-approved credit limit of <b>Rs {pre_approved_limit:,.0f}</b>.<br/><br/>
+        This loan has been approved upon successful upload and verification of your
+        salary slip, confirming that your Debt-to-Income (DTI) ratio remains within
+        the 50% threshold as mandated by RBI guidelines.<br/><br/>
+        <i>Enhanced approval is subject to successful submission of all documents
+        listed in Section 5 of this letter before disbursement.</i>
+        </para>
+        """
+    else:
+        approval_type_text = f"""
+        <para fontSize="9" leading="13" backColor="#E8F5E9" borderColor="#10B981"
+              borderWidth="1" borderPadding="8">
+        <b>✅ APPROVAL TYPE: Instant Pre-Approved Loan</b><br/><br/>
+        Your sanctioned amount of <b>Rs {sanctioned_amount:,.0f}</b> is within your
+        pre-approved credit limit of <b>Rs {pre_approved_limit:,.0f}</b>.<br/><br/>
+        No additional income verification was required. This loan was processed
+        under our <b>Express Approval Policy</b> for pre-verified customers with
+        a strong credit profile.
+        </para>
+        """
+
+    story.append(Paragraph(approval_type_text, body_style))
     story.append(Spacer(1, 0.15*inch))
     
     # ==================== BORROWER DETAILS ====================
@@ -205,7 +242,7 @@ def generate_sanction_letter(loan_details):
         ['Residential Address:', loan_details.get('address', 'N/A')],
         ['PAN Number:', loan_details.get('pan', 'N/A')],
         ['Employment Details:', loan_details.get('employment', 'N/A')],
-        ['Credit Score:', str(loan_details.get('credit_score', 'N/A'))],
+        ['Credit Score:', f"{loan_details.get('credit_score', 'N/A')} / 900 (CIBIL)"],
     ]
     
     borrower_table = Table(borrower_data, colWidths=[2.2*inch, 4.2*inch])
@@ -233,6 +270,9 @@ def generate_sanction_letter(loan_details):
     total_interest = loan_details.get('total_interest', 0)
     total_payment = loan_details.get('total_payment', 0)
     
+    # Determine processing fee based on approval type
+    processing_fee_text = 'Rs 0 (Waived — Pre-Approved Customer)' if not is_conditional else 'Rs 499 (Discounted — Enhanced Limit Approval)'
+
     loan_data = [
         ['Sanctioned Amount:', f"Rs {amount:,.0f}"],
         ['Interest Rate (Reducing Balance):', f"{rate}% per annum"],
@@ -240,7 +280,7 @@ def generate_sanction_letter(loan_details):
         ['Monthly EMI (Fixed):', f"Rs {emi:,.0f}"],
         ['Total Interest Payable:', f"Rs {total_interest:,.0f}"],
         ['Total Amount Payable:', f"Rs {total_payment:,.0f}"],
-        ['Processing Fee:', 'Rs 0 (Waived for pre-approved customers)'],
+        ['Processing Fee:', processing_fee_text],
         ['Pre-closure Charges:', 'NIL (Pre-payment allowed after 6 EMIs)'],
         ['Late Payment Charges:', 'Rs 500 per instance + 2% p.m. penal interest'],
         ['Cheque/ECS Bounce Charges:', 'Rs 500 per bounce + bank charges']

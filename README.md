@@ -80,14 +80,14 @@ Open [http://localhost:8501](http://localhost:8501) in your browser.
 
 The mock database (`data/customers.json`) includes pre-loaded personas for testing:
 
-| Name | Phone | Score | Scenario |
+| Name | Phone | CIBIL Score | Scenario |
 |---|---|---|---|
-| Ravi Kumar | `9876543210` | 780 | Happy path — high score, instant approval |
-| Priya Sharma | `8765432109` | 742 | Existing education loan impacts DTI |
-| Sneha Patel | `7654321098` | 695 | Borderline score — conditional options |
-| Amit Verma | `9812345678` | 650 | High existing EMIs — DTI rejection path |
-| Vikram Desai | `9367890123` | 795 | Premium customer — large loan, fast approval |
-| Pooja Agarwal | `9278901234` | 705 | Identity mismatch demo scenario |
+| Ravi Kumar | `9876543210` | 780 / 900 | Happy path — high score, instant approval |
+| Priya Sharma | `8765432109` | 742 / 900 | Existing education loan impacts DTI |
+| Sneha Patel | `7654321098` | 695 / 900 | Score below 700 — hard reject + improvement plan |
+| Amit Verma | `9812345678` | 650 / 900 | Low score + high EMIs — rejection with counter-offer |
+| Vikram Desai | `9367890123` | 795 / 900 | Premium customer — large loan, fast approval |
+| Pooja Agarwal | `9278901234` | 705 / 900 | Conditional approval — salary slip upload path |
 
 ---
 
@@ -99,9 +99,11 @@ loanverse-ai/
 ├── logic.py                      # Underwriting engine & financial calculations
 ├── conversation_templates.py     # Maya's dialogue scripts
 ├── agents/
+│   ├── __init__.py               # Clean export of all 4 agents
 │   ├── master.py                 # Master Agent (Maya) — state machine & intent routing
-│   ├── sales.py                  # Sales Agent — rate negotiation
-│   └── verification.py           # Verification Agent — KYC
+│   ├── sales.py                  # Sales Agent — Goldilocks options, objection handling
+│   ├── verification.py           # Verification Agent — phone validation, KYC, CRM lookup
+│   └── underwriting.py           # Underwriting Agent — credit bureau API, DTI, 4-rule engine
 ├── assets/
 │   ├── sanction_generator.py     # RBI-compliant PDF generator
 │   ├── avatars.py                # Chat avatar assets
@@ -109,7 +111,8 @@ loanverse-ai/
 │   ├── light_mode.css            # Light mode CSS
 │   └── style.css                 # Base styles
 ├── data/
-│   └── customers.json            # Mock customer database
+│   └── customers.json            # Mock customer database (10 personas)
+├── COMPLETE_ARCHITECTURE_DOCUMENTATION.md
 ├── requirements.txt
 ├── .env.example
 └── README.md

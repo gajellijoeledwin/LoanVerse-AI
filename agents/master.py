@@ -5,10 +5,10 @@ The Orchestrator - Routes tasks to specialized Worker Agents.
 Tracks conversation state, detects intent, and enforces compliance (DPDP/RBI).
 
 Features:
-- Robust Regex for Indian numerical slang (50k, 1.5L)
-- DPDP Consent Gate (Explicit permission check)
-- Hub-and-Spoke Routing to Worker Agents
-- Compliance "Mule Hunter" for fraud detection
+- Intent Detection via Rule-Based NLU (regex + keyword matching)
+- DPDP Consent Gate (explicit data permission before any lookup)
+- Hub-and-Spoke Routing to Worker Agents (Sales, Verification, Underwriting)
+- Compliance Guardrails (fraud, coercion, age, crypto policy detection)
 
 Author: LoanVerse Team
 Purpose: Tata Capital Techathon 2026
@@ -112,8 +112,7 @@ class MasterAgent:
         if any(w in msg for w in ['yes', 'yeah', 'yep', 'ok', 'okay', 'proceed', 'agree', 'sure']): return Intent.ACCEPTANCE
         if any(w in msg for w in ['no', 'nope', 'cancel', 'refuse', 'stop', 'don\'t']): return Intent.REJECTION
         
-        # Financial Intents
-        # Handle "5L", "50k", "1Cr" using Regex to avoid false positives on 'l' letter
+        # Financial Intents — match common amount patterns and loan keywords
         financial_pattern = r'\d+\s*(l|lakh|cr|crore|k|thousand)'
         financial_keywords = ['lakh', 'crore', '₹', 'rupees', 'loan']
         
@@ -279,8 +278,8 @@ class MasterAgent:
     
     def enforce_compliance(self, user_message: str) -> Optional[str]:
         """
-        'Mule Hunter' - Compliance Guardrail.
-        Detects coercion, fraud, crypto, and age violations.
+        Compliance Guardrail.
+        Detects coercion, fraud, bribery, crypto, and age-eligibility violations.
         """
         msg = user_message.lower()
         
@@ -416,24 +415,3 @@ class MasterAgent:
         }
         return traces.get(agent_name, [])
 
-# ============================================================================
-# WORKER AGENTS (LOGIC SIMULATORS)
-# ============================================================================
-
-class SalesAgent:
-    """Handles negotiation psychology."""
-    @staticmethod
-    def handle_rate_objection(credit_score: int) -> str:
-        # Dynamic response based on score
-        if credit_score >= 800:
-            return f"I completely understand. However, because of your excellent score of {credit_score}, I've already unlocked our **Prime Rate of 10.5%** for you. This is significantly lower than credit cards (36-42%)."
-        else:
-            return f"I hear you. The rate of 11.5% is customized based on your current credit profile. By maintaining timely payments on this loan, you can actually improve your score for future borrowings."
-
-class VerificationAgent:
-    """Handles Mock KYC."""
-    @staticmethod
-    def perform_kyc(phone: str) -> Dict:
-        # Logic is imported dynamically to prevent circular imports in some IDEs
-        # In a real app, this calls the logic layer
-        return {"action": "verify_kyc_logic", "phone": phone}

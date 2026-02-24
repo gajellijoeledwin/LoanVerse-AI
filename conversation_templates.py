@@ -507,48 +507,46 @@ Now, for your **{purpose}** - how much exactly are you looking to borrow?
         
         response = f"Got it - ₹{int(requested_amount):,} for your {purpose}.\n\nLet me check your affordability...\n\n"
         
-        # Empathic Rejection Case
+        # ── Empathic Rejection: high DTI + low credit score ─────────────────
         if not safe and score < 700:
+            # Build path_b_text before entering the f-string
+            if current_emis > 0:
+                path_b_text = (
+                    f"**Path B — Consolidate Your Loans** (Worth exploring!)\n"
+                    f"You have ₹{current_emis:,}/month in existing EMIs. Roll them into "
+                    f"one product and get:\n"
+                    f"• Single lower EMI, often at a better rate\n"
+                    f"• One lender, cleaner finances"
+                )
+            else:
+                pts_needed = max(700 - score, 0)
+                path_b_text = (
+                    f"**Path B — Improve Your CIBIL Score** (Build for the future)\n"
+                    f"Your score is **{score}/900** — just {pts_needed} points from our "
+                    f"650+ Standard tier. Here's how:\n"
+                    f"• ✅ Pay all bills on time for 3 months\n"
+                    f"• ✅ Keep credit card utilisation below 30%\n"
+                    f"• ✅ Avoid new credit enquiries during this period"
+                )
+
+            instant_limit = int(salary * 0.5 / 12 * 29)  # ~29-month safe repayment
+            interest_saving = int((15.0 - 13.5) / 100 * requested_amount)
+
             response += f"""━━━━━━━━━━━━━━━━━━━━━
-⚠️ **AFFORDABILITY ANALYSIS**
-━━━━━━━━━━━━━━━━━━━━━
-
-Your Current Situation:
-• Monthly Salary: ₹{salary:,}
-• Existing EMIs: ₹{current_emis:,}
-• Proposed New EMI: ₹{int(proposed_emi):,} (for ₹{int(requested_amount):,})
-• **Total EMIs: ₹{int(total_emi):,}** ({dti}% of income) ⚠️
-
-━━━━━━━━━━━━━━━━━━━━━
-
-{name}, I need to be honest with you:
-
-Adding ₹{int(proposed_emi):,} EMI to your existing ₹{current_emis:,} would leave you with very 
-little per month for everything else.
-
-That's financially very risky. RBI guidelines cap EMIs at 50% of income 
-to protect borrowers like you from over-leveraging.
-
-━━━━━━━━━━━━━━━━━━━━━
 💡 **HERE'S MY ADVICE:**
 ━━━━━━━━━━━━━━━━━━━━━
 
-**Option 1: Smaller Amount**
-If we reduce the amount, we can make the EMI safer.
+**Path A — Start with What's Approved Now**
+I can approve up to **₹{user_profile.get('limit', 0):,.0f}** instantly — no documents needed. Type any amount to try it.
 
-**Option 2: Loan Consolidation** (Better choice!)
-Consolidate your existing loans + this new need.
-• Single lower EMI
-• Better rate on consolidated amount
-• Cleaner finances
+{path_b_text}
 
-**Option 3: Wait 6-12 Months**
-If your existing loans are paying down, your capacity will increase.
+**Path C — Wait & Strengthen** (3–6 month plan)
+Once your score crosses 700, you unlock our Standard tier at 13.5%, saving ₹{interest_saving:,} in interest on a similar loan.
 
-Which option makes most sense for your situation?"""
+Which path would you like to explore? (Type **'Path A'**, **'Path B'**, or **'Path C'**)"""
             return response
-            
-        # Clean Slate / Easy Approval Case
+
         elif current_emis == 0 and safe:
             response += f"""━━━━━━━━━━━━━━━━━━━━━
 ✅ **EXCELLENT SITUATION!**
