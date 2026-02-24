@@ -1,6 +1,6 @@
 # 🏦 LoanVerse AI — Conversational Loan Assistant
 
-> An AI-powered, RBI-compliant personal loan assistant built for the **Tata Capital Techathon 2026**.
+> An AI-powered, RBI-compliant personal loan assistant built for the **EY Techathon 2026**.
 
 LoanVerse AI presents **Maya** — a consultative banking AI that guides customers through a full loan application in natural conversation. Maya performs live underwriting, enforces DTI compliance, generates Goldilocks EMI options, and produces a bank-grade sanction letter PDF — all in a single chat session.
 
