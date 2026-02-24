@@ -76,21 +76,6 @@ Open [http://localhost:8501](http://localhost:8501) in your browser.
 
 ---
 
-## 💡 Demo Personas
-
-The mock database (`data/customers.json`) includes pre-loaded personas for testing:
-
-| Name | Phone | CIBIL Score | Scenario |
-|---|---|---|---|
-| Ravi Kumar | `9876543210` | 780 / 900 | Happy path — high score, instant approval |
-| Priya Sharma | `8765432109` | 742 / 900 | Existing education loan impacts DTI |
-| Sneha Patel | `7654321098` | 695 / 900 | Score below 700 — hard reject + improvement plan |
-| Amit Verma | `9812345678` | 650 / 900 | Low score + high EMIs — rejection with counter-offer |
-| Vikram Desai | `9367890123` | 795 / 900 | Premium customer — large loan, fast approval |
-| Pooja Agarwal | `9278901234` | 705 / 900 | Conditional approval — salary slip upload path |
-
----
-
 ## 📁 Project Structure
 
 ```
